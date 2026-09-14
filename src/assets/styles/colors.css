@@ -1,0 +1,29 @@
+:root {
+  /* Brand Colors */
+  --color-primary: #006a37;
+  --color-primary-hover: #0a5c2e;
+  --color-primary-container: #008648;
+  --color-secondary: #006d35;
+  --color-tertiary: #f5a623;
+  --color-neutral: #1f2937;
+
+  /* Surfaces & Backgrounds */
+  --color-background: #f8f9ff;
+  --color-surface-card: #ffffff;
+  --color-surface-canvas: #f5f7fa;
+  --color-surface-container: #e6eeff;
+  --color-surface-container-high: #dee9fc;
+  --color-surface-container-low: #eff4ff;
+
+  /* Status Colors */
+  --color-error: #ba1a1a;
+  --color-error-container: #ffdad6;
+  --color-on-error-container: #93000a;
+  --color-tertiary-fixed: #ffddb4;
+  --color-on-tertiary-fixed: #291800;
+
+  /* Text Colors */
+  --color-text-primary: #1f2937;
+  --color-text-muted: #6b7280;
+  --color-on-primary: #ffffff;
+}

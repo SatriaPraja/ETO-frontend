@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="/favicon.ico">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>e-TO BPJS Ketenagakerjaan</title>
+    
+    <!-- Material Symbols & Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1" rel="stylesheet">
+
+    <!-- Tailwind CDN Script -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: '#006a37',
+              primaryHover: '#0a5c2e',
+              secondary: '#006d35',
+              tertiary: '#f5a623',
+              background: '#f8f9ff',
+              surfaceCard: '#ffffff',
+              surfaceCanvas: '#f5f7fa',
+              surfaceContainer: '#e6eeff',
+              surfaceContainerHigh: '#dee9fc',
+              surfaceContainerLow: '#eff4ff',
+              error: '#ba1a1a',
+              errorContainer: '#ffdad6',
+              onErrorContainer: '#93000a',
+              tertiaryFixed: '#ffddb4',
+              onTertiaryFixed: '#291800',
+              textPrimary: '#1f2937',
+              textMuted: '#6b7280',
+              onPrimary: '#ffffff'
+            },
+            fontFamily: {
+              headline: ['Manrope', 'sans-serif'],
+              body: ['Hanken Grotesk', 'sans-serif']
+            }
+          }
+        }
+      }
+    </script>
+  </head>
+  <body class="bg-background font-body text-textPrimary antialiased">
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
