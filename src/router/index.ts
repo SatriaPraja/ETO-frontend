@@ -1,21 +1,24 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { useAuthStore } from '@/stores/authStore'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
-    // 1. RUTE LOGIN (Berdiri Sendiri / Tanpa MainLayout)
+    // 1. RUTE LOGIN
     {
       path: '/login',
       name: 'login',
       component: () => import('../views/auth/loginView.vue'),
+      meta: { requiresGuest: true },
     },
     {
       path: '/',
       component: () => import('../views/layout/mainLayout.vue'),
+      meta: { requiresAuth: true },
       children: [
         {
           path: '',
-          redirect: '/dashboard', 
+          redirect: '/dashboard',
         },
         {
           path: 'dashboard',
@@ -85,6 +88,28 @@ const router = createRouter({
       ],
     },
   ],
+})
+
+// Navigation Guard Proteksi Sesi
+router.beforeEach(async (to, _from, next) => {
+  const authStore = useAuthStore()
+
+  // Verifikasi sesi cookie saat perama kali aplikasi dimuat
+  if (!authStore.isAuthenticated) {
+    await authStore.fetchUser()
+  }
+
+  // Jika rute butuh auth dan user belum login
+  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+    return next({ name: 'login' })
+  }
+
+  // Jika user sudah terotentikasi tetapi membuka /login
+  if (to.meta.requiresGuest && authStore.isAuthenticated) {
+    return next({ name: 'dashboard' })
+  }
+
+  next()
 })
 
 export default router

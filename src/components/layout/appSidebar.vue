@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useAuthStore } from '@/stores/authStore'
 import { useOrderStore, type TransportType } from '@/stores/orderStore'
 
 defineProps<{
@@ -11,9 +12,9 @@ const emit = defineEmits(['close-sidebar', 'open-role-modal'])
 
 const router = useRouter()
 const route = useRoute()
+const authStore = useAuthStore()
 const orderStore = useOrderStore()
 
-// State Buka-Tutup (Accordion) per Grup Menu
 const isNavUtamaOpen = ref(true)
 const isPengajuanOpen = ref(true)
 const isMonitoringOpen = ref(true)
@@ -25,7 +26,6 @@ function navigateToOrder(type: TransportType) {
   emit('close-sidebar')
 }
 
-// Fungsi Pengecekan Menu Aktif
 function isSubmenuActive(type: string) {
   return route.path === '/create-order' && orderStore.activeTransport === type
 }
@@ -35,6 +35,39 @@ function isRouteActive(path: string) {
     return route.path === '/history' || route.path.startsWith('/history/order-detail')
   }
   return route.path === path
+}
+
+const displayRoleName = computed(() => {
+  if (!authStore.activeRole) return authStore.user?.jabatan || 'Pegawai'
+  
+  const roleMap: Record<string, string> = {
+    SUPER_ADMIN: 'Super Admin',
+    OFFICIAL_BOOKER: 'Official Booker',
+    APPROVER_KAKANWIL: 'Pejabat Penyetuju',
+    ADMIN_TRAVEL_KP: 'Admin Travel KP',
+    ASDEP_KEUANGAN: 'Asdep Keuangan',
+  }
+
+  return roleMap[authStore.activeRole] || authStore.activeRole
+})
+
+const userInitials = computed(() => {
+  if (authStore.user?.avatarInitials) return authStore.user.avatarInitials
+  if (authStore.user?.namaLengkap) {
+    return authStore.user.namaLengkap
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .substring(0, 2)
+      .toUpperCase()
+  }
+  return 'U'
+})
+
+// Handler klik untuk seluruh area div profil
+function handleProfileClick() {
+  emit('open-role-modal')
+  emit('close-sidebar')
 }
 </script>
 
@@ -47,13 +80,9 @@ function isRouteActive(path: string) {
   >
     <div class="flex flex-col h-full overflow-y-auto">
       <!-- Header Logo & Close Mobile -->
-      <div
-        class="h-16 px-4 py-3 flex items-center justify-between border-b border-gray-100 shrink-0"
-      >
+      <div class="h-16 px-4 py-3 flex items-center justify-between border-b border-gray-100 shrink-0">
         <div class="flex items-center gap-2.5 min-w-0">
-          <div
-            class="w-8 h-8 rounded-lg bg-surfaceCanvas border border-gray-200 flex items-center justify-center p-1 shrink-0"
-          >
+          <div class="w-8 h-8 rounded-lg bg-surfaceCanvas border border-gray-200 flex items-center justify-center p-1 shrink-0">
             <img
               alt="Logo e-TO"
               class="w-full h-full object-contain"
@@ -61,9 +90,7 @@ function isRouteActive(path: string) {
             />
           </div>
           <div class="flex flex-col leading-tight min-w-0 overflow-hidden">
-            <span class="text-sm font-bold text-textPrimary font-headline tracking-tight truncate"
-              >e-TO Travel</span
-            >
+            <span class="text-sm font-bold text-textPrimary font-headline tracking-tight truncate">e-TO Travel</span>
             <span class="text-[10px] text-textMuted truncate">BPJS Ketenagakerjaan</span>
           </div>
         </div>
@@ -111,8 +138,7 @@ function isRouteActive(path: string) {
                   'material-symbols-outlined text-[18px]',
                   isRouteActive('/dashboard') ? 'text-primary' : 'text-textMuted',
                 ]"
-                >grid_view</span
-              >
+              >grid_view</span>
               <span>Beranda</span>
             </router-link>
           </div>
@@ -154,9 +180,7 @@ function isRouteActive(path: string) {
                   : 'text-textPrimary hover:bg-surfaceCanvas',
               ]"
             >
-              <span class="material-symbols-outlined text-textMuted text-[18px]">{{
-                item.icon
-              }}</span>
+              <span class="material-symbols-outlined text-textMuted text-[18px]">{{ item.icon }}</span>
               <span>{{ item.label }}</span>
             </button>
           </div>
@@ -179,7 +203,6 @@ function isRouteActive(path: string) {
           </button>
 
           <div v-show="isMonitoringOpen" class="space-y-1 pt-0.5">
-            <!-- Riwayat Pengajuan -->
             <router-link
               to="/history"
               @click="$emit('close-sidebar')"
@@ -196,17 +219,12 @@ function isRouteActive(path: string) {
                     'material-symbols-outlined text-[18px]',
                     isRouteActive('/history') ? 'text-primary' : 'text-textMuted',
                   ]"
-                  >receipt_long</span
-                >
+                >receipt_long</span>
                 <span>Riwayat Pengajuan</span>
               </div>
-              <span
-                class="w-4 h-4 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold flex items-center justify-center"
-                >2</span
-              >
+              <span class="w-4 h-4 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold flex items-center justify-center">2</span>
             </router-link>
 
-            <!-- Inbox Persetujuan -->
             <router-link
               to="/approvals"
               @click="$emit('close-sidebar')"
@@ -223,17 +241,12 @@ function isRouteActive(path: string) {
                     'material-symbols-outlined text-[18px]',
                     isRouteActive('/approvals') ? 'text-primary' : 'text-textMuted',
                   ]"
-                  >fact_check</span
-                >
+                >fact_check</span>
                 <span>Inbox Persetujuan</span>
               </div>
-              <span
-                class="w-4 h-4 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center"
-                >5</span
-              >
+              <span class="w-4 h-4 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center">5</span>
             </router-link>
 
-            <!-- Laporan Eksekutif -->
             <router-link
               to="/reports"
               @click="$emit('close-sidebar')"
@@ -249,8 +262,7 @@ function isRouteActive(path: string) {
                   'material-symbols-outlined text-[18px]',
                   route.path.startsWith('/reports') ? 'text-primary' : 'text-textMuted',
                 ]"
-                >bar_chart</span
-              >
+              >bar_chart</span>
               <span>Laporan Eksekutif</span>
             </router-link>
           </div>
@@ -273,7 +285,6 @@ function isRouteActive(path: string) {
           </button>
 
           <div v-show="isMasterOpen" class="space-y-1 pt-0.5">
-            <!-- Maskapai & Vendor -->
             <router-link
               to="/master/vendors"
               @click="$emit('close-sidebar')"
@@ -289,23 +300,18 @@ function isRouteActive(path: string) {
                   'material-symbols-outlined text-[18px]',
                   route.path.startsWith('/master/vendors') ? 'text-white' : 'text-textMuted',
                 ]"
-                >storefront</span
-              >
+              >storefront</span>
               <span>Maskapai & Vendor</span>
             </router-link>
 
-            <!-- Kota & Bandara -->
             <a
               href="#"
               class="flex items-center gap-3 px-3 py-2 rounded-xl text-textPrimary hover:bg-surfaceCanvas transition-colors"
             >
-              <span class="material-symbols-outlined text-textMuted text-[18px]"
-                >location_city</span
-              >
+              <span class="material-symbols-outlined text-textMuted text-[18px]">location_city</span>
               <span>Kota & Bandara</span>
             </a>
 
-            <!-- Mata Anggaran (MAK) -->
             <router-link
               to="/master/budget"
               @click="$emit('close-sidebar')"
@@ -321,35 +327,40 @@ function isRouteActive(path: string) {
                   'material-symbols-outlined text-[18px]',
                   route.path.startsWith('/master/budget') ? 'text-white' : 'text-textMuted',
                 ]"
-                >account_balance_wallet</span
-              >
+              >account_balance_wallet</span>
               <span>Mata Anggaran (MAK)</span>
             </router-link>
           </div>
         </div>
       </nav>
 
-      <!-- Profil Pengguna Bottom -->
-      <div class="p-3 m-3 bg-surfaceCanvas border border-gray-100 rounded-xl shrink-0">
+      <!-- 🟢 Profil Pengguna Bottom: Seluruh Div Bisa Diklik -->
+      <div 
+        @click="handleProfileClick"
+        class="p-3 m-3 bg-surfaceCanvas border border-gray-100 hover:border-primary/40 rounded-xl shrink-0 cursor-pointer transition-all hover:shadow-sm group"
+        title="Klik untuk ganti peran (Switch Role)"
+      >
         <div class="flex items-center gap-2.5">
+          <!-- Avatar Initials -->
           <div
-            class="w-8 h-8 rounded-full bg-primary text-onPrimary font-bold flex items-center justify-center text-xs shrink-0 shadow-2xs"
+            class="w-8 h-8 rounded-full bg-primary text-onPrimary font-bold flex items-center justify-center text-xs shrink-0 shadow-2xs uppercase"
           >
-            AP
+            {{ userInitials }}
           </div>
+
+          <!-- User Name & Role -->
           <div class="flex flex-col flex-1 min-w-0">
-            <span class="text-xs font-bold text-textPrimary truncate leading-tight"
-              >Andi Pratama</span
-            >
+            <span class="text-xs font-bold text-textPrimary truncate leading-tight group-hover:text-primary transition-colors">
+              {{ authStore.user?.namaLengkap || 'User E-TO' }}
+            </span>
             <div class="flex items-center justify-between mt-0.5">
-              <span class="text-[10px] text-textMuted truncate">Official Booker / Pejabat</span>
-              <button
-                type="button"
-                @click="($emit('open-role-modal'), $emit('close-sidebar'))"
-                class="text-[10px] text-primary hover:underline font-bold shrink-0 ml-1"
-              >
-                <span class="material-symbols-outlined text-[14px]">logout</span>
-              </button>
+              <span class="text-[10px] text-textMuted truncate">
+                {{ displayRoleName }}
+              </span>
+
+              <span class="text-[10px] text-primary font-bold shrink-0 ml-1 flex items-center gap-0.5">
+                <span class="material-symbols-outlined text-[14px]">published_with_changes</span>
+              </span>
             </div>
           </div>
         </div>

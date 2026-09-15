@@ -5,12 +5,44 @@ const authStore = useAuthStore()
 </script>
 
 <template>
-  <div class="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-10 lg:p-16 bg-surfaceCanvas">
+  <div class="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-10 lg:p-16 bg-surfaceCanvas relative">
+    
+    <!-- Floating Toast Popup Notification (Mengambang agar tidak merusak layout) -->
+    <Transition name="fade">
+      <div 
+        v-if="authStore.errorMessage" 
+        class="fixed top-6 right-6 z-50 max-w-md bg-surfaceCard border-l-4 border-error p-4 rounded-xl shadow-2xl flex items-start gap-3 transition-all"
+      >
+        <span class="material-symbols-outlined text-error text-[22px] shrink-0 mt-0.5">error</span>
+        <div class="flex flex-col flex-1 text-sm">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-textPrimary">Autentikasi Gagal</span>
+            <button 
+              type="button" 
+              @click="authStore.clearError()" 
+              class="text-textMuted hover:text-textPrimary text-xs font-bold ml-2"
+            >
+              ✕
+            </button>
+          </div>
+          <p class="text-xs mt-1 text-textMuted leading-relaxed">
+            {{ authStore.errorMessage }}
+          </p>
+          <!-- Detail rincian validasi field jika ada (Error 400 array) -->
+          <ul v-if="authStore.validationErrors.length > 0" class="mt-2 list-disc list-inside text-[11px] text-error">
+            <li v-for="(err, idx) in authStore.validationErrors" :key="idx">
+              <strong class="capitalize">{{ err.field }}</strong>: {{ err.message }}
+            </li>
+          </ul>
+        </div>
+      </div>
+    </Transition>
+
     <div class="w-full max-w-[490px] flex flex-col">
       <div class="bg-surfaceCard rounded-2xl shadow-xl p-8 sm:p-10 flex flex-col relative">
         
         <!-- Header Status -->
-        <div class="flex items-center justify-between mb-8 pb-4">
+        <div class="flex items-center justify-between mb-8 pb-4 border-b border-gray-100">
           <div class="flex items-center gap-2">
             <span class="flex h-2.5 w-2.5 relative">
               <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-secondary opacity-75"></span>
@@ -29,75 +61,13 @@ const authStore = useAuthStore()
           </p>
         </div>
 
-        <!-- State Simulation Tabs -->
-        <div class="mb-6 p-1 bg-surfaceContainer rounded-xl flex items-center gap-1">
-          <button
-            type="button"
-            @click="authStore.setTab('normal')"
-            :class="[
-              'flex-1 py-1.5 px-2 text-center text-xs font-bold rounded-lg transition-all',
-              authStore.activeTab === 'normal' ? 'bg-surfaceCard text-primary shadow-sm' : 'text-textMuted hover:text-textPrimary'
-            ]"
-          >
-            Default
-          </button>
-          <button
-            type="button"
-            @click="authStore.setTab('error')"
-            :class="[
-              'flex-1 py-1.5 px-2 text-center text-xs font-bold rounded-lg transition-all',
-              authStore.activeTab === 'error' ? 'bg-surfaceCard text-error shadow-sm' : 'text-textMuted hover:text-textPrimary'
-            ]"
-          >
-            Simulasi Salah
-          </button>
-          <button
-            type="button"
-            @click="authStore.setTab('locked')"
-            :class="[
-              'flex-1 py-1.5 px-2 text-center text-xs font-bold rounded-lg transition-all',
-              authStore.activeTab === 'locked' ? 'bg-surfaceCard text-tertiary shadow-sm' : 'text-textMuted hover:text-textPrimary'
-            ]"
-          >
-            Akun Terkunci
-          </button>
-        </div>
-
-        <!-- Alert Error State -->
-        <div v-if="authStore.activeTab === 'error'" class="mb-6 p-3.5 rounded-xl bg-errorContainer text-onErrorContainer flex items-start gap-3 shadow-sm transition-all duration-300">
-          <span class="material-symbols-outlined text-error text-[20px] shrink-0 mt-0.5">error</span>
-          <div class="flex flex-col text-sm">
-            <span class="font-bold text-onErrorContainer">Gagal Memverifikasi Akun</span>
-            <p class="text-xs mt-0.5 text-onErrorContainer">
-              Username atau kata sandi tidak cocok. Sisa percobaan: <strong class="font-bold underline text-error">2 kali</strong> sebelum akun terkunci otomatis.
-            </p>
-          </div>
-        </div>
-
-        <!-- Alert Locked State -->
-        <div v-if="authStore.activeTab === 'locked'" class="mb-6 p-4 rounded-xl bg-tertiaryFixed text-onTertiaryFixed shadow-sm transition-all duration-300">
-          <div class="flex items-center gap-2.5 mb-1.5">
-            <span class="material-symbols-outlined text-tertiary font-bold text-[22px]">lock_clock</span>
-            <span class="text-base font-bold text-onTertiaryFixed font-headline">Akun Terkunci Sementara</span>
-          </div>
-          <p class="text-xs text-onTertiaryFixed/90 leading-normal font-body">
-            Akses ditangguhkan demi keamanan operasional karena terdeteksi 3x kegagalan autentikasi berturut-turut. Silakan tunggu jeda waktu:
-          </p>
-          <div class="mt-3 flex items-center justify-between bg-white/70 px-3 py-2 rounded-lg">
-            <span class="text-xs font-semibold uppercase tracking-wider text-tertiary">Dapat Dicoba Kembali:</span>
-            <span class="text-xl text-tertiary font-extrabold tracking-wider font-headline">
-              00:{{ authStore.lockCountdown < 10 ? '0' + authStore.lockCountdown : authStore.lockCountdown }}
-            </span>
-          </div>
-        </div>
-
         <!-- Login Form -->
         <form @submit.prevent="authStore.handleLogin" class="flex flex-col space-y-5">
           <!-- Username -->
           <div class="flex flex-col space-y-1.5">
             <label class="text-xs font-semibold text-textPrimary flex items-center justify-between" for="username">
               <span>Username / NPK Pegawai <span class="text-error font-bold">*</span></span>
-              <span class="text-[11px] text-textMuted font-normal">Contoh: 19880224</span>
+              <span class="text-[11px] text-textMuted font-normal">Contoh: 982144</span>
             </label>
             <div class="relative flex items-center">
               <span class="material-symbols-outlined absolute left-3 text-textMuted text-[20px] pointer-events-none">badge</span>
@@ -106,6 +76,7 @@ const authStore = useAuthStore()
                 v-model="authStore.username"
                 type="text"
                 required
+                :disabled="authStore.loading"
                 placeholder="Masukkan NPK atau email institusi"
                 class="w-full h-11 pl-10 pr-3.5 bg-surfaceCard border border-gray-200 rounded-lg text-sm text-textPrimary placeholder:text-textMuted/60 focus:outline-none focus:ring-2 focus:ring-primary shadow-sm transition-all"
               />
@@ -129,6 +100,7 @@ const authStore = useAuthStore()
                 v-model="authStore.password"
                 :type="authStore.isPasswordVisible ? 'text' : 'password'"
                 required
+                :disabled="authStore.loading"
                 placeholder="••••••••••••"
                 class="w-full h-11 pl-10 pr-11 bg-surfaceCard border border-gray-200 rounded-lg text-sm text-textPrimary placeholder:text-textMuted/60 focus:outline-none focus:ring-2 focus:ring-primary shadow-sm transition-all"
               />
@@ -144,7 +116,7 @@ const authStore = useAuthStore()
             </div>
           </div>
 
-          <!-- Checkbox & Token -->
+          <!-- Checkbox & Status -->
           <div class="flex items-center justify-between pt-1">
             <label class="flex items-center gap-2 cursor-pointer select-none">
               <input
@@ -164,14 +136,14 @@ const authStore = useAuthStore()
           <div class="pt-2">
             <button
               type="submit"
-              :disabled="authStore.activeTab === 'locked'"
+              :disabled="authStore.loading"
               :class="[
                 'w-full h-12 rounded-xl bg-primary hover:bg-primaryHover text-onPrimary font-semibold flex items-center justify-center space-x-2 shadow-md hover:shadow-lg transition-all',
-                authStore.activeTab === 'locked' ? 'opacity-50 cursor-not-allowed' : 'active:scale-[0.99]'
+                authStore.loading ? 'opacity-50 cursor-not-allowed' : 'active:scale-[0.99]'
               ]"
             >
-              <span>Masuk ke Aplikasi</span>
-              <span class="material-symbols-outlined text-[20px]">arrow_forward</span>
+              <span>{{ authStore.loading ? 'Memverifikasi...' : 'Masuk ke Aplikasi' }}</span>
+              <span v-if="!authStore.loading" class="material-symbols-outlined text-[20px]">arrow_forward</span>
             </button>
           </div>
         </form>
@@ -199,3 +171,15 @@ const authStore = useAuthStore()
     </div>
   </div>
 </template>
+
+<style scoped>
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+</style>
