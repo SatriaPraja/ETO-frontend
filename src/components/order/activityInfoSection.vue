@@ -1,11 +1,36 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import { useOrderStore } from '@/stores/orderStore'
+import SelectExistingTOModal, { type ExistingTOItem } from '@/components/order/selectExistingTOModal.vue'
 
 const orderStore = useOrderStore()
+
+// State Modal Existing TO
+const isExistingTOModalOpen = ref(false)
+const selectedExistingTO = ref<ExistingTOItem | null>(null)
+
+// Interseptor Klik pada Dropdown Select
+function handleSelectClick(e: Event) {
+  const selectEl = e.target as HTMLSelectElement
+  if (selectEl.value === 'select-existing') {
+    isExistingTOModalOpen.value = true
+  }
+}
+
+// Handler Callback saat User Memilih TO dari Modal
+function handleTOSelected(item: ExistingTOItem) {
+  selectedExistingTO.value = item
+  
+  // Otomatis isi Nama Kegiatan dari TO yang dipilih
+  orderStore.formInfo.activityName = item.title
+  
+  // Update No Travel Order di store jika diperlukan
+  // orderStore.formInfo.toCode = item.toCode
+}
 </script>
 
 <template>
-  <section class="bg-surfaceCard rounded-xl p-6 shadow-sm border border-gray-100 space-y-4">
+  <section class="bg-surfaceCard rounded-xl p-6 shadow-sm border border-gray-100 space-y-4 font-body">
     <div class="flex items-center justify-between pb-3 border-b border-gray-100 min-h-[42px]">
       <div>
         <h2 class="text-base font-bold text-textPrimary font-headline flex items-center gap-2">
@@ -26,20 +51,29 @@ const orderStore = useOrderStore()
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div class="flex flex-col">
         <label class="text-xs font-semibold text-textPrimary mb-1">Pilih Travel Order Existing (Opsional)</label>
-        <select class="h-9 px-3 rounded-lg bg-surfaceCard border border-gray-200 text-xs text-textPrimary focus:outline-none focus:border-primary">
-          <option v-if="orderStore.activeTransport === 'hotel'">TO/2026/05/00187 - Sosialisasi JKP Wilayah Jatim</option>
-          <option v-else>— Buat Baru (Stand-alone TO) —</option>
+        
+        <!-- Dropdown dengan Opsi Pemicu Modal -->
+        <select
+          @change="handleSelectClick"
+          class="h-9 px-3 rounded-lg bg-surfaceCard border border-gray-200 text-xs font-semibold text-textPrimary focus:outline-none focus:border-primary"
+        >
+          <option value="new">— Buat Baru (Stand-alone TO) —</option>
+          <option value="select-existing" class="text-primary font-bold">
+            {{ selectedExistingTO ? `✓ ${selectedExistingTO.toCode} - ${selectedExistingTO.title}` : '🔍 Cari & Gabungkan TO Existing...' }}
+          </option>
         </select>
       </div>
+
       <div class="flex flex-col">
         <label class="text-xs font-semibold text-textPrimary mb-1">No. Travel Order</label>
         <input
           type="text"
-          :value="orderStore.activeTransport === 'hotel' ? 'TO/2026/05/00215' : '# TO/2026/05/00214'"
+          :value="selectedExistingTO ? selectedExistingTO.toCode : (orderStore.activeTransport === 'hotel' ? 'TO/2026/05/00215' : '# TO/2026/05/00214')"
           readonly
           class="h-9 px-3 rounded-lg bg-surfaceCanvas border border-gray-200 text-xs font-bold text-primary"
         />
       </div>
+
       <div class="flex flex-col">
         <label class="text-xs font-semibold text-textPrimary mb-1">{{ orderStore.activeTransport === 'hotel' ? 'Tanggal Pengajuan' : 'Tanggal Order' }}</label>
         <input
@@ -56,6 +90,7 @@ const orderStore = useOrderStore()
       <input
         v-model="orderStore.formInfo.activityName"
         type="text"
+        placeholder="Masukkan nama kegiatan resmi penugasan..."
         class="h-9 px-3 rounded-lg bg-surfaceCard border border-gray-200 text-xs text-textPrimary focus:outline-none focus:border-primary"
       />
     </div>
@@ -126,5 +161,12 @@ const orderStore = useOrderStore()
         <input type="text" value="Kebutuhan akomodasi dekat lokasi kegiatan kantor wilayah." class="h-9 px-3 rounded-lg bg-surfaceCard border border-gray-200 text-xs text-textMuted focus:outline-none focus:border-primary" />
       </div>
     </div>
+
+    <!-- Komponent Modal Pilih Travel Order Existing -->
+    <SelectExistingTOModal
+      :is-open="isExistingTOModalOpen"
+      @close="isExistingTOModalOpen = false"
+      @select="handleTOSelected"
+    />
   </section>
 </template>

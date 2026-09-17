@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import HotelGuestsModal from '@/components/order/hotelGuestsModal.vue'
 
 const roomCount = ref(2)
+const isGuestsModalOpen = ref(false)
 
 function increaseRoom() {
   roomCount.value++
@@ -9,6 +11,11 @@ function increaseRoom() {
 
 function decreaseRoom() {
   if (roomCount.value > 1) roomCount.value--
+}
+
+function handleGuestsSaved() {
+  // Callback setelah modal disimpan
+  isGuestsModalOpen.value = false
 }
 </script>
 
@@ -53,7 +60,7 @@ function decreaseRoom() {
             <div class="relative">
               <span class="material-symbols-outlined absolute left-2.5 top-2.5 text-textMuted text-[18px]">location_on</span>
               <select class="w-full h-9 pl-8 pr-3 rounded-lg bg-surfaceCard border border-gray-200 text-xs text-textPrimary focus:outline-none focus:border-primary">
-                <option>Surabaya (Jawa T</option>
+                <option>Surabaya</option>
                 <option>Jakarta Pusat</option>
                 <option>Bandung</option>
               </select>
@@ -156,7 +163,12 @@ function decreaseRoom() {
               <td class="p-3 text-right font-medium text-textPrimary">Rp 850.000</td>
               <td class="p-3 text-right font-bold text-primary font-headline">Rp 5.100.000</td>
               <td class="p-3 text-center">
-                <button type="button" class="px-3 py-1 rounded-lg bg-blue-50 text-blue-700 font-bold text-[11px] hover:bg-blue-100 transition-colors inline-flex items-center gap-1">
+                <!-- Tombol Pemicu Modal Alokasi Data Penginap -->
+                <button
+                  type="button"
+                  @click="isGuestsModalOpen = true"
+                  class="px-3 py-1 rounded-lg bg-blue-50 text-blue-700 font-bold text-[11px] hover:bg-blue-100 transition-colors inline-flex items-center gap-1 shadow-2xs"
+                >
                   <span class="material-symbols-outlined text-[14px]">person_add</span>
                   <span>Isi Data Penginap 1 (2/4 Tamu)</span>
                 </button>
@@ -193,5 +205,14 @@ function decreaseRoom() {
       </div>
       <span class="material-symbols-outlined text-textMuted text-[20px]">keyboard_arrow_down</span>
     </div>
+
+    <!-- Modal Alokasi Data Penginap -->
+    <HotelGuestsModal
+      :is-open="isGuestsModalOpen"
+      hotel-name="Hotel Santika Premiere Gubeng Surabaya"
+      reservation-id="HTL-202605-042"
+      @close="isGuestsModalOpen = false"
+      @save="handleGuestsSaved"
+    />
   </div>
 </template>

@@ -19,6 +19,7 @@ const isNavUtamaOpen = ref(true)
 const isPengajuanOpen = ref(true)
 const isMonitoringOpen = ref(true)
 const isMasterOpen = ref(true)
+const isUserControlOpen = ref(true)
 
 function navigateToOrder(type: TransportType) {
   orderStore.setTransport(type)
@@ -39,7 +40,7 @@ function isRouteActive(path: string) {
 
 const displayRoleName = computed(() => {
   if (!authStore.activeRole) return authStore.user?.jabatan || 'Pegawai'
-  
+
   const roleMap: Record<string, string> = {
     SUPER_ADMIN: 'Super Admin',
     OFFICIAL_BOOKER: 'Official Booker',
@@ -64,10 +65,15 @@ const userInitials = computed(() => {
   return 'U'
 })
 
-// Handler klik untuk seluruh area div profil
 function handleProfileClick() {
   emit('open-role-modal')
   emit('close-sidebar')
+}
+
+// 🟢 Helper Pengecekan Akses (Tanpa otomatis me-return true untuk SUPER_ADMIN jika array spesifik dipisah)
+function hasAccess(allowedRoles: string[]): boolean {
+  if (!authStore.activeRole) return false
+  return allowedRoles.includes(authStore.activeRole)
 }
 </script>
 
@@ -107,17 +113,14 @@ function handleProfileClick() {
       <!-- Navigasi Utama -->
       <nav class="flex-1 px-3 py-3 space-y-3 text-xs font-semibold">
         <!-- GROUP 1: NAVIGASI UTAMA -->
-        <div class="space-y-1">
+        <div v-if="hasAccess(['SUPER_ADMIN', 'OFFICIAL_BOOKER', 'APPROVER_KAKANWIL', 'ADMIN_TRAVEL_KP', 'ASDEP_KEUANGAN'])" class="space-y-1">
           <button
             type="button"
             @click="isNavUtamaOpen = !isNavUtamaOpen"
             class="w-full px-3 py-1 flex items-center justify-between text-[10px] font-bold text-textMuted uppercase tracking-wider hover:text-textPrimary transition-colors"
           >
             <span>NAVIGASI UTAMA</span>
-            <span
-              class="material-symbols-outlined text-[16px] transition-transform duration-200"
-              :class="{ 'rotate-180': !isNavUtamaOpen }"
-            >
+            <span class="material-symbols-outlined text-[16px] transition-transform duration-200" :class="{ 'rotate-180': !isNavUtamaOpen }">
               keyboard_arrow_down
             </span>
           </button>
@@ -128,34 +131,24 @@ function handleProfileClick() {
               @click="$emit('close-sidebar')"
               :class="[
                 'flex items-center gap-3 px-3 py-2 rounded-xl transition-all',
-                isRouteActive('/dashboard')
-                  ? 'bg-emerald-50 text-primary font-bold border-l-4 border-primary'
-                  : 'text-textPrimary hover:bg-surfaceCanvas',
+                isRouteActive('/dashboard') ? 'bg-emerald-50 text-primary font-bold border-l-4 border-primary' : 'text-textPrimary hover:bg-surfaceCanvas',
               ]"
             >
-              <span
-                :class="[
-                  'material-symbols-outlined text-[18px]',
-                  isRouteActive('/dashboard') ? 'text-primary' : 'text-textMuted',
-                ]"
-              >grid_view</span>
+              <span class="material-symbols-outlined text-[18px]" :class="isRouteActive('/dashboard') ? 'text-primary' : 'text-textMuted'">grid_view</span>
               <span>Beranda</span>
             </router-link>
           </div>
         </div>
 
         <!-- GROUP 2: PENGAJUAN SURAT TUGAS -->
-        <div class="space-y-1">
+        <div v-if="hasAccess(['SUPER_ADMIN', 'OFFICIAL_BOOKER'])" class="space-y-1">
           <button
             type="button"
             @click="isPengajuanOpen = !isPengajuanOpen"
             class="w-full px-3 py-1 flex items-center justify-between text-[10px] font-bold text-textMuted uppercase tracking-wider hover:text-textPrimary transition-colors"
           >
             <span>PENGAJUAN SURAT TUGAS</span>
-            <span
-              class="material-symbols-outlined text-[16px] transition-transform duration-200"
-              :class="{ 'rotate-180': !isPengajuanOpen }"
-            >
+            <span class="material-symbols-outlined text-[16px] transition-transform duration-200" :class="{ 'rotate-180': !isPengajuanOpen }">
               keyboard_arrow_down
             </span>
           </button>
@@ -175,9 +168,7 @@ function handleProfileClick() {
               @click="navigateToOrder(item.type as TransportType)"
               :class="[
                 'w-full flex items-center gap-3 px-3 py-1.5 rounded-xl transition-all text-left',
-                isSubmenuActive(item.type)
-                  ? 'bg-emerald-50 text-primary font-bold border-l-4 border-primary'
-                  : 'text-textPrimary hover:bg-surfaceCanvas',
+                isSubmenuActive(item.type) ? 'bg-emerald-50 text-primary font-bold border-l-4 border-primary' : 'text-textPrimary hover:bg-surfaceCanvas',
               ]"
             >
               <span class="material-symbols-outlined text-textMuted text-[18px]">{{ item.icon }}</span>
@@ -187,17 +178,14 @@ function handleProfileClick() {
         </div>
 
         <!-- GROUP 3: MONITORING & AUDIT -->
-        <div class="space-y-1">
+        <div v-if="hasAccess(['SUPER_ADMIN', 'OFFICIAL_BOOKER', 'APPROVER_KAKANWIL', 'ADMIN_TRAVEL_KP', 'ASDEP_KEUANGAN'])" class="space-y-1">
           <button
             type="button"
             @click="isMonitoringOpen = !isMonitoringOpen"
             class="w-full px-3 py-1 flex items-center justify-between text-[10px] font-bold text-textMuted uppercase tracking-wider hover:text-textPrimary transition-colors"
           >
             <span>MONITORING & AUDIT</span>
-            <span
-              class="material-symbols-outlined text-[16px] transition-transform duration-200"
-              :class="{ 'rotate-180': !isMonitoringOpen }"
-            >
+            <span class="material-symbols-outlined text-[16px] transition-transform duration-200" :class="{ 'rotate-180': !isMonitoringOpen }">
               keyboard_arrow_down
             </span>
           </button>
@@ -208,147 +196,135 @@ function handleProfileClick() {
               @click="$emit('close-sidebar')"
               :class="[
                 'flex items-center justify-between px-3 py-2 rounded-xl transition-colors',
-                isRouteActive('/history')
-                  ? 'bg-emerald-50 text-primary font-bold border-l-4 border-primary'
-                  : 'text-textPrimary hover:bg-surfaceCanvas',
+                isRouteActive('/history') ? 'bg-emerald-50 text-primary font-bold border-l-4 border-primary' : 'text-textPrimary hover:bg-surfaceCanvas',
               ]"
             >
               <div class="flex items-center gap-3">
-                <span
-                  :class="[
-                    'material-symbols-outlined text-[18px]',
-                    isRouteActive('/history') ? 'text-primary' : 'text-textMuted',
-                  ]"
-                >receipt_long</span>
+                <span class="material-symbols-outlined text-[18px]" :class="isRouteActive('/history') ? 'text-primary' : 'text-textMuted'">receipt_long</span>
                 <span>Riwayat Pengajuan</span>
               </div>
               <span class="w-4 h-4 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold flex items-center justify-center">2</span>
             </router-link>
 
             <router-link
+              v-if="hasAccess(['SUPER_ADMIN', 'APPROVER_KAKANWIL'])"
               to="/approvals"
               @click="$emit('close-sidebar')"
               :class="[
                 'flex items-center justify-between px-3 py-2 rounded-xl transition-colors',
-                isRouteActive('/approvals')
-                  ? 'bg-emerald-50 text-primary font-bold border-l-4 border-primary'
-                  : 'text-textPrimary hover:bg-surfaceCanvas',
+                isRouteActive('/approvals') ? 'bg-emerald-50 text-primary font-bold border-l-4 border-primary' : 'text-textPrimary hover:bg-surfaceCanvas',
               ]"
             >
               <div class="flex items-center gap-3">
-                <span
-                  :class="[
-                    'material-symbols-outlined text-[18px]',
-                    isRouteActive('/approvals') ? 'text-primary' : 'text-textMuted',
-                  ]"
-                >fact_check</span>
+                <span class="material-symbols-outlined text-[18px]" :class="isRouteActive('/approvals') ? 'text-primary' : 'text-textMuted'">fact_check</span>
                 <span>Inbox Persetujuan</span>
               </div>
               <span class="w-4 h-4 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center">5</span>
             </router-link>
 
             <router-link
+              v-if="hasAccess(['SUPER_ADMIN', 'APPROVER_KAKANWIL', 'ADMIN_TRAVEL_KP', 'ASDEP_KEUANGAN'])"
               to="/reports"
               @click="$emit('close-sidebar')"
               :class="[
                 'flex items-center gap-3 px-3 py-2 rounded-xl transition-colors',
-                route.path.startsWith('/reports')
-                  ? 'bg-emerald-50 text-primary font-bold border-l-4 border-primary'
-                  : 'text-textPrimary hover:bg-surfaceCanvas',
+                route.path.startsWith('/reports') ? 'bg-emerald-50 text-primary font-bold border-l-4 border-primary' : 'text-textPrimary hover:bg-surfaceCanvas',
               ]"
             >
-              <span
-                :class="[
-                  'material-symbols-outlined text-[18px]',
-                  route.path.startsWith('/reports') ? 'text-primary' : 'text-textMuted',
-                ]"
-              >bar_chart</span>
+              <span class="material-symbols-outlined text-[18px]" :class="route.path.startsWith('/reports') ? 'text-primary' : 'text-textMuted'">bar_chart</span>
               <span>Laporan Eksekutif</span>
             </router-link>
           </div>
         </div>
 
         <!-- GROUP 4: ADMINISTRASI MASTER -->
-        <div class="space-y-1">
+        <div v-if="hasAccess(['SUPER_ADMIN', 'ADMIN_TRAVEL_KP', 'ASDEP_KEUANGAN'])" class="space-y-1">
           <button
             type="button"
             @click="isMasterOpen = !isMasterOpen"
             class="w-full px-3 py-1 flex items-center justify-between text-[10px] font-bold text-textMuted uppercase tracking-wider hover:text-textPrimary transition-colors"
           >
             <span>ADMINISTRASI MASTER</span>
-            <span
-              class="material-symbols-outlined text-[16px] transition-transform duration-200"
-              :class="{ 'rotate-180': !isMasterOpen }"
-            >
+            <span class="material-symbols-outlined text-[16px] transition-transform duration-200" :class="{ 'rotate-180': !isMasterOpen }">
               keyboard_arrow_down
             </span>
           </button>
 
           <div v-show="isMasterOpen" class="space-y-1 pt-0.5">
             <router-link
+              v-if="hasAccess(['SUPER_ADMIN', 'ADMIN_TRAVEL_KP'])"
               to="/master/vendors"
               @click="$emit('close-sidebar')"
               :class="[
                 'flex items-center gap-3 px-3 py-2 rounded-xl transition-colors',
-                route.path.startsWith('/master/vendors')
-                  ? 'bg-emerald-800 text-white font-bold shadow-2xs'
-                  : 'text-textPrimary hover:bg-surfaceCanvas',
+                route.path.startsWith('/master/vendors') ? 'bg-emerald-800 text-white font-bold shadow-2xs' : 'text-textPrimary hover:bg-surfaceCanvas',
               ]"
             >
-              <span
-                :class="[
-                  'material-symbols-outlined text-[18px]',
-                  route.path.startsWith('/master/vendors') ? 'text-white' : 'text-textMuted',
-                ]"
-              >storefront</span>
+              <span class="material-symbols-outlined text-[18px]" :class="route.path.startsWith('/master/vendors') ? 'text-white' : 'text-textMuted'">storefront</span>
               <span>Maskapai & Vendor</span>
             </router-link>
 
-            <a
-              href="#"
-              class="flex items-center gap-3 px-3 py-2 rounded-xl text-textPrimary hover:bg-surfaceCanvas transition-colors"
-            >
+            <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-xl text-textPrimary hover:bg-surfaceCanvas transition-colors">
               <span class="material-symbols-outlined text-textMuted text-[18px]">location_city</span>
               <span>Kota & Bandara</span>
             </a>
 
             <router-link
+              v-if="hasAccess(['SUPER_ADMIN', 'ASDEP_KEUANGAN'])"
               to="/master/budget"
               @click="$emit('close-sidebar')"
               :class="[
                 'flex items-center gap-3 px-3 py-2 rounded-xl transition-colors',
-                route.path.startsWith('/master/budget')
+                route.path.startsWith('/master/budget') ? 'bg-emerald-800 text-white font-bold shadow-2xs' : 'text-textPrimary hover:bg-surfaceCanvas',
+              ]"
+            >
+              <span class="material-symbols-outlined text-[18px]" :class="route.path.startsWith('/master/budget') ? 'text-white' : 'text-textMuted'">account_balance_wallet</span>
+              <span>Mata Anggaran (MAK)</span>
+            </router-link>
+          </div>
+        </div>
+
+        <!-- 🟢 GROUP 5: MANAJEMEN PENGGUNA (PALING BAWAH & KHUSUS SUPER_ADMIN SAJA) -->
+        <div v-if="hasAccess(['SUPER_ADMIN'])" class="space-y-1">
+          <button
+            type="button"
+            @click="isUserControlOpen = !isUserControlOpen"
+            class="w-full px-3 py-1 flex items-center justify-between text-[10px] font-bold text-textMuted uppercase tracking-wider hover:text-textPrimary transition-colors"
+          >
+            <span>MANAJEMEN PENGGUNA</span>
+            <span class="material-symbols-outlined text-[16px] transition-transform duration-200" :class="{ 'rotate-180': !isUserControlOpen }">
+              keyboard_arrow_down
+            </span>
+          </button>
+
+          <div v-show="isUserControlOpen" class="space-y-1 pt-0.5">
+            <router-link
+              to="/users"
+              @click="$emit('close-sidebar')"
+              :class="[
+                'flex items-center gap-3 px-3 py-2 rounded-xl transition-colors',
+                route.path.startsWith('/users')
                   ? 'bg-emerald-800 text-white font-bold shadow-2xs'
                   : 'text-textPrimary hover:bg-surfaceCanvas',
               ]"
             >
-              <span
-                :class="[
-                  'material-symbols-outlined text-[18px]',
-                  route.path.startsWith('/master/budget') ? 'text-white' : 'text-textMuted',
-                ]"
-              >account_balance_wallet</span>
-              <span>Mata Anggaran (MAK)</span>
+              <span class="material-symbols-outlined text-[18px]" :class="route.path.startsWith('/users') ? 'text-white' : 'text-textMuted'">manage_accounts</span>
+              <span>Kelola User & Role</span>
             </router-link>
           </div>
         </div>
       </nav>
 
-      <!-- 🟢 Profil Pengguna Bottom: Seluruh Div Bisa Diklik -->
-      <div 
+      <!-- Profil Pengguna Bottom -->
+      <div
         @click="handleProfileClick"
         class="p-3 m-3 bg-surfaceCanvas border border-gray-100 hover:border-primary/40 rounded-xl shrink-0 cursor-pointer transition-all hover:shadow-sm group"
         title="Klik untuk ganti peran (Switch Role)"
       >
         <div class="flex items-center gap-2.5">
-          <!-- Avatar Initials -->
-          <div
-            class="w-8 h-8 rounded-full bg-primary text-onPrimary font-bold flex items-center justify-center text-xs shrink-0 shadow-2xs uppercase"
-          >
+          <div class="w-8 h-8 rounded-full bg-primary text-onPrimary font-bold flex items-center justify-center text-xs shrink-0 shadow-2xs uppercase">
             {{ userInitials }}
           </div>
-
-          <!-- User Name & Role -->
           <div class="flex flex-col flex-1 min-w-0">
             <span class="text-xs font-bold text-textPrimary truncate leading-tight group-hover:text-primary transition-colors">
               {{ authStore.user?.namaLengkap || 'User E-TO' }}
@@ -357,7 +333,6 @@ function handleProfileClick() {
               <span class="text-[10px] text-textMuted truncate">
                 {{ displayRoleName }}
               </span>
-
               <span class="text-[10px] text-primary font-bold shrink-0 ml-1 flex items-center gap-0.5">
                 <span class="material-symbols-outlined text-[14px]">published_with_changes</span>
               </span>

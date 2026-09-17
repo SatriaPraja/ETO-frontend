@@ -1,9 +1,30 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useOrderStore } from '@/stores/orderStore'
+import SelectTravelerModal, { type EmployeeItem } from '@/components/order/selectTravelerModal.vue'
 
 const orderStore = useOrderStore()
 const isRoundTrip = ref(true)
+
+// State Modal LOV Personel
+const isTravelerModalOpen = ref(false)
+
+// State Form Personel
+const travelerForm = ref({
+  name: 'Rian Hidayat',
+  npk: '198804122011',
+  jabatan: 'Penata Madya Pengendalian Mutu',
+  golongan: 'Gol. III/C',
+  phone: '081234567890',
+})
+
+// Function Callback saat Personel Dipilih dari Modal LOV
+function handleTravelerSelected(emp: EmployeeItem) {
+  travelerForm.value.name = emp.name
+  travelerForm.value.npk = emp.npk
+  travelerForm.value.jabatan = `${emp.jabatan} (${emp.golongan})`
+  travelerForm.value.phone = emp.phone || '081234567890'
+}
 
 const transportIcon = computed(() => {
   switch (orderStore.activeTransport) {
@@ -44,13 +65,15 @@ function handleAddTransport() {
       <div class="grid grid-cols-1 md:grid-cols-4 gap-3 bg-surfaceCard p-4 rounded-xl border border-gray-100 shadow-2xs">
         <div class="flex flex-col">
           <label class="text-xs font-semibold text-textPrimary mb-1">Nama Traveller *</label>
-          <div class="relative">
+          <div class="relative cursor-pointer" @click="isTravelerModalOpen = true">
             <input
               type="text"
-              value="Rian Hidayat"
-              class="w-full h-9 pl-3 pr-8 rounded-lg bg-surfaceCard border border-gray-200 text-xs text-textPrimary focus:outline-none focus:border-primary"
+              v-model="travelerForm.name"
+              readonly
+              placeholder="Klik untuk cari karyawan..."
+              class="w-full h-9 pl-3 pr-8 rounded-lg bg-surfaceCard border border-gray-200 text-xs font-bold text-textPrimary focus:outline-none focus:border-primary cursor-pointer hover:border-primary/60 transition-all"
             />
-            <span class="material-symbols-outlined absolute right-2.5 top-2 text-textMuted text-[18px]">search</span>
+            <span class="material-symbols-outlined absolute right-2.5 top-2 text-primary text-[18px]">search</span>
           </div>
         </div>
 
@@ -58,9 +81,9 @@ function handleAddTransport() {
           <label class="text-xs font-semibold text-textPrimary mb-1">NPK</label>
           <input
             type="text"
-            value="198804122011"
+            v-model="travelerForm.npk"
             readonly
-            class="h-9 px-3 rounded-lg bg-surfaceCanvas border border-gray-200 text-xs text-textMuted"
+            class="h-9 px-3 rounded-lg bg-surfaceCanvas border border-gray-200 text-xs text-textMuted font-mono font-semibold"
           />
         </div>
 
@@ -68,7 +91,7 @@ function handleAddTransport() {
           <label class="text-xs font-semibold text-textPrimary mb-1">Jabatan</label>
           <input
             type="text"
-            value="Penata Madya Pengendalian Mutu"
+            v-model="travelerForm.jabatan"
             readonly
             class="h-9 px-3 rounded-lg bg-surfaceCanvas border border-gray-200 text-xs text-textMuted truncate"
           />
@@ -78,7 +101,7 @@ function handleAddTransport() {
           <label class="text-xs font-semibold text-textPrimary mb-1">No. Handphone *</label>
           <input
             type="text"
-            value="081234567890"
+            v-model="travelerForm.phone"
             class="h-9 px-3 rounded-lg bg-surfaceCard border border-gray-200 text-xs text-textPrimary focus:outline-none focus:border-primary"
           />
         </div>
@@ -163,7 +186,7 @@ function handleAddTransport() {
         <label for="roundtrip-check" class="text-xs font-bold text-textPrimary font-headline cursor-pointer select-none">
           Pulang-Pergi (PP)
         </label>
-        <span class="px-2 py-0.5 rounded bg-surfaceContainerLow text-primary text-[10px] font-bold">AKTIFF</span>
+        <span class="px-2 py-0.5 rounded bg-surfaceContainerLow text-primary text-[10px] font-bold">AKTIF</span>
       </div>
 
       <div v-if="isRoundTrip" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 bg-surfaceCard p-4 rounded-xl border border-gray-100 shadow-2xs">
@@ -203,7 +226,7 @@ function handleAddTransport() {
       </div>
     </div>
 
-    <!-- 4. TOMBOL TAMBAHKAN KE DAFTAR (Pemicu Akses Hotel) -->
+    <!-- 4. TOMBOL TAMBAHKAN KE DAFTAR -->
     <div class="flex justify-end pt-2">
       <button
         type="button"
@@ -214,5 +237,12 @@ function handleAddTransport() {
         <span>Tambahkan ke Daftar</span>
       </button>
     </div>
+
+    <!-- Komponen Modal SelectTravelerModal -->
+    <SelectTravelerModal
+      :is-open="isTravelerModalOpen"
+      @close="isTravelerModalOpen = false"
+      @select="handleTravelerSelected"
+    />
   </div>
 </template>

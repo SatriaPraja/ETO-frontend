@@ -85,6 +85,11 @@ const router = createRouter({
           name: 'master-budget',
           component: () => import('../views/master/budgetCoaView.vue'),
         },
+        {
+          path: 'users',
+          name: 'users',
+          component: () => import('../views/admin/userManagementView.vue'),
+        },
       ],
     },
   ],
