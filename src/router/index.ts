@@ -33,7 +33,7 @@ const router = createRouter({
         {
           path: 'history',
           name: 'history',
-          component: () => import('../views/monitor/historyView.vue'),
+          component: () => import('../views/history/historyView.vue'),
         },
         {
           path: 'history/order-detail/:id?',
@@ -48,17 +48,17 @@ const router = createRouter({
         {
           path: 'history/print-pdf/:id?',
           name: 'print-pdf',
-          component: () => import('../views/monitor/pdfPreviewView.vue'),
+          component: () => import('../views/history/pdfPreviewView.vue'),
         },
         {
           path: 'approvals',
           name: 'approvals',
-          component: () => import('../views/monitor/approvalView.vue'),
+          component: () => import('../views/history/approvalView.vue'),
         },
         {
           path: 'reports',
           name: 'reports-hub',
-          component: () => import('../views/monitor/reportsHubView.vue'),
+          component: () => import('../views/history/reportsHubView.vue'),
         },
         {
           path: 'reports/hotel',

@@ -1,3 +1,9 @@
+<script setup lang="ts">
+import { useHistoryStore } from '@/stores/historyStore'
+
+const historyStore = useHistoryStore()
+</script>
+
 <template>
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 font-body">
     <!-- 1. Total Terdaftar -->
@@ -5,7 +11,9 @@
       <div>
         <span class="text-[10px] font-bold text-textMuted uppercase tracking-wider block">TOTAL TERDAFTAR</span>
         <div class="flex items-baseline gap-1 mt-1">
-          <span class="text-2xl font-extrabold text-textPrimary font-headline">24</span>
+          <span class="text-2xl font-extrabold text-textPrimary font-headline">
+            {{ historyStore.countTotal }}
+          </span>
           <span class="text-xs text-textMuted font-medium">Berkas</span>
         </div>
       </div>
@@ -19,7 +27,9 @@
       <div>
         <span class="text-[10px] font-bold text-textMuted uppercase tracking-wider block">MENUNGGU VERIFIKASI</span>
         <div class="flex items-baseline gap-1 mt-1">
-          <span class="text-2xl font-extrabold text-blue-600 font-headline">5</span>
+          <span class="text-2xl font-extrabold text-blue-600 font-headline">
+            {{ historyStore.countWaiting }}
+          </span>
           <span class="text-xs text-textMuted font-medium">Berkas</span>
         </div>
       </div>
@@ -33,7 +43,9 @@
       <div>
         <span class="text-[10px] font-bold text-textMuted uppercase tracking-wider block">SIAP BERANGKAT (APPROVED)</span>
         <div class="flex items-baseline gap-1 mt-1">
-          <span class="text-2xl font-extrabold text-emerald-600 font-headline">12</span>
+          <span class="text-2xl font-extrabold text-emerald-600 font-headline">
+            {{ historyStore.countApproved }}
+          </span>
           <span class="text-xs text-textMuted font-medium">e-TO</span>
         </div>
       </div>
@@ -47,7 +59,9 @@
       <div>
         <span class="text-[10px] font-bold text-textMuted uppercase tracking-wider block">PERLU TINDAKAN (KOREKSI)</span>
         <div class="flex items-baseline gap-1 mt-1">
-          <span class="text-2xl font-extrabold text-amber-600 font-headline">2</span>
+          <span class="text-2xl font-extrabold text-amber-600 font-headline">
+            {{ historyStore.countReturned }}
+          </span>
           <span class="text-xs text-textMuted font-medium">Revisi</span>
         </div>
       </div>

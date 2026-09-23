@@ -4,9 +4,10 @@ import { useOrderStore, type TransportType } from '@/stores/orderStore'
 import OrderBreadcrumb from '@/components/order/orderBreadcrumb.vue'
 import OrderHeaderBanner from '@/components/order/orderHeaderBanner.vue'
 import ActivityInfoSection from '@/components/order/activityInfoSection.vue'
-import OrderFooterBar from '@/components/order/orderFooterBar.vue'
 import DynamicTransportSegment from '@/components/order/dynamicTransportSegment.vue'
 import HotelTransportSegment from '@/components/order/hotelTransportSegment.vue'
+import TravellerTableList from '@/components/order/travellerTableList.vue'
+import OrderFooterBar from '@/components/order/orderFooterBar.vue'
 
 const orderStore = useOrderStore()
 
@@ -25,21 +26,32 @@ const currentTab = computed(() => {
 </script>
 
 <template>
-  <div class="space-y-6 pb-28 font-body w-full max-w-full overflow-x-hidden">
-    <!-- Sub-header Breadcrumb -->
-    <OrderBreadcrumb :currentTab="currentTab" />
+  <div class="space-y-6 pb-28 font-body w-full max-w-full overflow-x-hidden min-h-screen bg-surfaceCanvas">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 pt-2 space-y-6">
+      <!-- Sub-header Breadcrumb -->
+      <OrderBreadcrumb :currentTab="currentTab" />
 
-    <!-- Header Banner & Stepper -->
-    <OrderHeaderBanner :currentTab="currentTab" />
+      <!-- Header Banner & Stepper -->
+      <OrderHeaderBanner :currentTab="currentTab" />
 
-    <!-- Section 1: Informasi Kegiatan -->
-    <ActivityInfoSection />
+      <!-- Section 1: Informasi Kegiatan & Anggaran -->
+      <ActivityInfoSection />
 
-    <!-- Section 2: Segment Dynamic Transport / Hotel -->
-    <section class="bg-surfaceCard rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-      <HotelTransportSegment v-if="orderStore.activeTransport === 'hotel'" class="p-6" />
-      <DynamicTransportSegment v-else class="p-6" />
-    </section>
+      <!-- Section 2 & 3: Moda Transportasi / Hotel & Tabel Traveller -->
+      <template v-if="orderStore.activeTransport === 'hotel'">
+        <section class="bg-surfaceCard rounded-2xl shadow-2xs border border-gray-100 overflow-hidden">
+          <HotelTransportSegment class="p-6" />
+        </section>
+      </template>
+
+      <template v-else>
+        <!-- Form Penambahan Personel & Itinerary -->
+        <DynamicTransportSegment />
+
+        <!-- Tabel Keranjang Traveller Ditambahkan -->
+        <TravellerTableList />
+      </template>
+    </div>
 
     <!-- Sticky Bottom Action Footer Bar -->
     <OrderFooterBar />

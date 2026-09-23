@@ -1,20 +1,99 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import HotelGuestsModal from '@/components/order/hotelGuestsModal.vue'
+import { ref, computed, watch } from 'vue'
+import { useOrderStore } from '@/stores/orderStore'
+import HotelGuestsModal from '@/components/order/modal/hotelGuestsModal.vue'
+import SelectHotelModal, { type HotelItem } from '@/components/order/modal/selectHotelModal.vue'
 
-const roomCount = ref(2)
+const orderStore = useOrderStore()
+
+// State Modal
 const isGuestsModalOpen = ref(false)
+const isHotelModalOpen = ref(false)
+const selectedHotelForGuests = ref<any>(null)
+
+// State Input Form Hotel Baru
+const newHotel = ref({
+  hotelId: null as number | null,
+  hotelNameCustom: '',
+  cityName: 'Surabaya',
+  cityId: 2,
+  roomCount: 1,
+  checkInDate: '2026-05-12',
+  checkOutDate: '2026-05-15',
+  durationNights: 3,
+  pricePerNight: 850000,
+})
+
+// Hitung durasi malam otomatis saat Check-In / Check-Out diisi
+watch([() => newHotel.value.checkInDate, () => newHotel.value.checkOutDate], ([inDate, outDate]) => {
+  if (inDate && outDate) {
+    const start = new Date(inDate)
+    const end = new Date(outDate)
+    const diffTime = end.getTime() - start.getTime()
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    newHotel.value.durationNights = diffDays > 0 ? diffDays : 1
+  }
+})
+
+// Estimasi Subtotal untuk item yang sedang diisi di form
+const calculatedSubtotal = computed(() => {
+  return newHotel.value.roomCount * newHotel.value.durationNights * newHotel.value.pricePerNight
+})
 
 function increaseRoom() {
-  roomCount.value++
+  newHotel.value.roomCount++
 }
 
 function decreaseRoom() {
-  if (roomCount.value > 1) roomCount.value--
+  if (newHotel.value.roomCount > 1) newHotel.value.roomCount--
+}
+
+// Handler memilih hotel dari modal master hotel
+function handleHotelSelected(hotel: HotelItem) {
+  newHotel.value.hotelId = hotel.id
+  newHotel.value.hotelNameCustom = hotel.name
+  if (hotel.cityName) {
+    newHotel.value.cityName = hotel.cityName
+  }
+  isHotelModalOpen.value = false
+}
+
+// Fungsi tombol "Tambahkan ke Daftar" (Memindahkan data dari form ke Pinia Store / Tabel)
+function handleAddHotel() {
+  if (!newHotel.value.hotelNameCustom) {
+    alert('Mohon pilih atau isi nama hotel terlebih dahulu.')
+    return
+  }
+  if (!newHotel.value.checkInDate || !newHotel.value.checkOutDate) {
+    alert('Mohon lengkapi tanggal Check-In dan Check-Out.')
+    return
+  }
+
+  orderStore.addHotel({
+    hotelId: newHotel.value.hotelId,
+    hotelNameCustom: newHotel.value.hotelNameCustom,
+    cityId: newHotel.value.cityId,
+    cityName: newHotel.value.cityName,
+    roomCount: newHotel.value.roomCount,
+    checkInDate: newHotel.value.checkInDate,
+    checkOutDate: newHotel.value.checkOutDate,
+    durationNights: newHotel.value.durationNights,
+    pricePerNight: newHotel.value.pricePerNight,
+    subtotalPrice: calculatedSubtotal.value,
+    guests: [],
+  })
+
+  // Reset input form
+  newHotel.value.hotelNameCustom = ''
+  newHotel.value.hotelId = null
+}
+
+function openGuestsModal(hotelItem: any) {
+  selectedHotelForGuests.value = hotelItem
+  isGuestsModalOpen.value = true
 }
 
 function handleGuestsSaved() {
-  // Callback setelah modal disimpan
   isGuestsModalOpen.value = false
 }
 </script>
@@ -23,6 +102,7 @@ function handleGuestsSaved() {
   <div class="space-y-6 font-body">
     <!-- Section 2: Data Hotel & Detail Kamar -->
     <div class="space-y-4">
+      <!-- Header Section -->
       <div class="flex items-center justify-between pb-1">
         <div>
           <h2 class="text-base font-bold text-textPrimary font-headline flex items-center gap-2">
@@ -32,25 +112,39 @@ function handleGuestsSaved() {
           </h2>
           <p class="text-xs text-textMuted mt-0.5">Masukkan rincian reservasi akomodasi hotel dinas sesuai plafon jabatan</p>
         </div>
-        <button type="button" class="text-xs font-bold text-primary hover:underline flex items-center gap-1">
+
+        <button
+          type="button"
+          @click="isHotelModalOpen = true"
+          class="text-xs font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer"
+        >
           <span class="material-symbols-outlined text-[16px]">domain</span>
           <span>Lihat Hotel Rekanan BPJS</span>
         </button>
       </div>
 
-      <!-- Form Filter/Order Hotel -->
+      <!-- Form Filter / Order Hotel -->
       <div class="bg-surfaceCard p-4 rounded-xl border border-gray-100 shadow-2xs space-y-3">
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
           <!-- Nama Hotel -->
           <div class="flex flex-col lg:col-span-2">
             <label class="text-xs font-semibold text-textPrimary mb-1">Nama Hotel *</label>
-            <div class="relative">
-              <span class="material-symbols-outlined absolute left-2.5 top-2.5 text-textMuted text-[18px]">search</span>
+            <div class="relative flex items-center">
+              <span class="material-symbols-outlined absolute left-2.5 text-textMuted text-[18px]">search</span>
               <input
+                v-model="newHotel.hotelNameCustom"
                 type="text"
-                value="Hotel Santika Premiere Gubeng Sur"
-                class="w-full h-9 pl-8 pr-3 rounded-lg bg-surfaceCard border border-gray-200 text-xs text-textPrimary focus:outline-none focus:border-primary font-medium"
+                placeholder="Pilih dari master hotel atau tulis manual..."
+                class="w-full h-9 pl-8 pr-8 rounded-lg bg-surfaceCard border border-gray-200 text-xs text-textPrimary focus:outline-none focus:border-primary font-medium"
               />
+              <button
+                type="button"
+                @click="isHotelModalOpen = true"
+                class="absolute right-2 text-textMuted hover:text-primary transition-colors cursor-pointer"
+                title="Cari Master Hotel"
+              >
+                <span class="material-symbols-outlined text-[18px]">domain</span>
+              </button>
             </div>
           </div>
 
@@ -59,10 +153,14 @@ function handleGuestsSaved() {
             <label class="text-xs font-semibold text-textPrimary mb-1">Kota *</label>
             <div class="relative">
               <span class="material-symbols-outlined absolute left-2.5 top-2.5 text-textMuted text-[18px]">location_on</span>
-              <select class="w-full h-9 pl-8 pr-3 rounded-lg bg-surfaceCard border border-gray-200 text-xs text-textPrimary focus:outline-none focus:border-primary">
-                <option>Surabaya</option>
-                <option>Jakarta Pusat</option>
-                <option>Bandung</option>
+              <select
+                v-model="newHotel.cityName"
+                class="w-full h-9 pl-8 pr-3 rounded-lg bg-surfaceCard border border-gray-200 text-xs text-textPrimary focus:outline-none focus:border-primary cursor-pointer"
+              >
+                <option value="Surabaya">Surabaya</option>
+                <option value="Jakarta Pusat">Jakarta Pusat</option>
+                <option value="Bandung">Bandung</option>
+                <option value="Medan">Medan</option>
               </select>
             </div>
           </div>
@@ -71,9 +169,9 @@ function handleGuestsSaved() {
           <div class="flex flex-col">
             <label class="text-xs font-semibold text-textPrimary mb-1">Jml Kamar *</label>
             <div class="flex items-center h-9 rounded-lg border border-gray-200 bg-surfaceCard px-2">
-              <button type="button" @click="decreaseRoom" class="w-6 h-6 flex items-center justify-center text-textMuted hover:text-textPrimary font-bold">-</button>
-              <span class="flex-1 text-center text-xs font-bold text-textPrimary">{{ roomCount }} Kamar</span>
-              <button type="button" @click="increaseRoom" class="w-6 h-6 flex items-center justify-center text-textMuted hover:text-textPrimary font-bold">+</button>
+              <button type="button" @click="decreaseRoom" class="w-6 h-6 flex items-center justify-center text-textMuted hover:text-textPrimary font-bold cursor-pointer">-</button>
+              <span class="flex-1 text-center text-xs font-bold text-textPrimary">{{ newHotel.roomCount }} Kamar</span>
+              <button type="button" @click="increaseRoom" class="w-6 h-6 flex items-center justify-center text-textMuted hover:text-textPrimary font-bold cursor-pointer">+</button>
             </div>
           </div>
 
@@ -81,31 +179,34 @@ function handleGuestsSaved() {
           <div class="flex items-center gap-2 sm:col-span-2 lg:col-span-1">
             <div class="flex flex-col flex-1">
               <label class="text-xs font-semibold text-textPrimary mb-1">Check-In *</label>
-              <input type="text" value="12 Mei 2026" class="h-9 px-2.5 rounded-lg bg-surfaceCard border border-gray-200 text-xs text-textPrimary text-center" />
+              <input type="date" v-model="newHotel.checkInDate" class="h-9 px-2 rounded-lg bg-surfaceCard border border-gray-200 text-xs text-textPrimary text-center" />
             </div>
             <div class="flex flex-col flex-1">
               <label class="text-xs font-semibold text-textPrimary mb-1">Check-Out *</label>
-              <input type="text" value="15 Mei 2026" class="h-9 px-2.5 rounded-lg bg-surfaceCard border border-gray-200 text-xs text-textPrimary text-center" />
+              <input type="date" v-model="newHotel.checkOutDate" class="h-9 px-2 rounded-lg bg-surfaceCard border border-gray-200 text-xs text-textPrimary text-center" />
             </div>
           </div>
         </div>
 
-        <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
+        <!-- 🟢 BARIS ESTIMASI & TOMBOL TAMBAHKAN KE DAFTAR -->
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 border-t border-gray-100">
           <div class="flex items-center gap-4">
             <div class="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 text-xs font-bold flex items-center gap-1.5">
               <span class="material-symbols-outlined text-[16px]">schedule</span>
-              <span>3 Malam</span>
+              <span>{{ newHotel.durationNights }} Malam</span>
             </div>
             <div class="text-xs">
-              <span class="text-textMuted">Tarif / Kamar / Malam: </span>
-              <strong class="text-textPrimary font-headline text-sm ml-1">Rp 850.000</strong>
-              <span class="text-[10px] text-emerald-600 font-semibold ml-2">✓ SBU ≤ Rp 950rb</span>
+              <span class="text-textMuted">Estimasi Subtotal: </span>
+              <strong class="text-textPrimary font-headline text-sm ml-1">
+                Rp {{ calculatedSubtotal.toLocaleString('id-ID') }}
+              </strong>
             </div>
           </div>
 
           <button
             type="button"
-            class="px-5 py-2 rounded-lg bg-primary hover:bg-primaryHover text-onPrimary text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all"
+            @click="handleAddHotel"
+            class="px-5 py-2 rounded-lg bg-primary hover:bg-primaryHover text-onPrimary text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
           >
             <span class="material-symbols-outlined text-[18px]">add_circle</span>
             <span>Tambahkan ke Daftar</span>
@@ -114,14 +215,21 @@ function handleGuestsSaved() {
       </div>
     </div>
 
-    <!-- Tabel Daftar Pemesanan Hotel -->
+    <!-- Tabel Daftar Pemesanan Hotel (Dinamis tanpa Data Dummy) -->
     <div class="space-y-3">
       <div class="flex items-center justify-between">
         <h3 class="text-xs font-bold text-textPrimary font-headline uppercase tracking-wider">
           Daftar Pemesanan Hotel
-          <span class="px-2 py-0.5 rounded bg-surfaceContainerLow text-primary ml-1">1 Hotel • 2 Kamar • 6 Room-Nights</span>
+          <span class="px-2 py-0.5 rounded bg-surfaceContainerLow text-primary ml-1">
+            {{ orderStore.hotels.length }} Hotel tersimpan
+          </span>
         </h3>
-        <span class="text-[11px] text-textMuted">Standar SBU Kelas Jabatan: <strong>Golongan III - Deputi Dir.</strong></span>
+        <span class="text-[11px] text-textMuted">
+          Total Akomodasi: 
+          <strong class="text-emerald-700 font-bold">
+            Rp {{ orderStore.totalHotelCost.toLocaleString('id-ID') }}
+          </strong>
+        </span>
       </div>
 
       <div class="overflow-x-auto border border-gray-100 rounded-xl bg-surfaceCard">
@@ -129,7 +237,7 @@ function handleGuestsSaved() {
           <thead class="bg-surfaceCanvas text-textMuted font-semibold uppercase text-[10px] tracking-wider border-b border-gray-100">
             <tr>
               <th class="p-3 text-center w-10">NO</th>
-              <th class="p-3">NAMA HOTEL & BINTANG</th>
+              <th class="p-3">NAMA HOTEL</th>
               <th class="p-3">KOTA</th>
               <th class="p-3 text-center">JML KAMAR</th>
               <th class="p-3 text-center">PERIODE MENGINAP</th>
@@ -141,78 +249,71 @@ function handleGuestsSaved() {
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100 text-xs">
-            <tr class="hover:bg-surfaceCanvas/50">
-              <td class="p-3 text-center font-bold text-textMuted">1</td>
-              <td class="p-3">
-                <div class="flex flex-col">
-                  <span class="font-bold text-textPrimary font-headline">Hotel Santika Premiere Gubeng</span>
-                  <div class="flex items-center gap-1 text-amber-400 text-[11px] mt-0.5">
-                    <span>★★★★☆</span>
-                    <span class="text-[10px] text-textMuted ml-1">Bintang 4 • Deluxe Twin</span>
-                  </div>
-                </div>
+            <!-- Jika Keranjang Hotel Masih Kosong -->
+            <tr v-if="orderStore.hotels.length === 0">
+              <td colspan="10" class="p-8 text-center text-textMuted">
+                Belum ada pemesanan hotel yang ditambahkan. Isi form di atas lalu klik <strong>"Tambahkan ke Daftar"</strong>.
               </td>
-              <td class="p-3 text-textMuted">Surabaya (Jawa Timur)</td>
-              <td class="p-3 text-center font-bold text-textPrimary">2 Kamar</td>
+            </tr>
+
+            <!-- Loop Data Hotel dari Store -->
+            <tr
+              v-else
+              v-for="(item, idx) in orderStore.hotels"
+              :key="item.id"
+              class="hover:bg-surfaceCanvas/50 transition-colors"
+            >
+              <td class="p-3 text-center font-bold text-textMuted">{{ idx + 1 }}</td>
+              <td class="p-3 font-bold text-textPrimary font-headline">{{ item.hotelNameCustom }}</td>
+              <td class="p-3 text-textMuted">{{ item.cityName }}</td>
+              <td class="p-3 text-center font-bold text-textPrimary">{{ item.roomCount }} Kamar</td>
               <td class="p-3 text-center whitespace-nowrap">
-                <span class="font-medium text-textPrimary">12 Mei ➔ 15 Mei 2026</span>
+                <span class="font-medium text-textPrimary">{{ item.checkInDate }} ➔ {{ item.checkOutDate }}</span>
               </td>
               <td class="p-3 text-center">
-                <span class="px-2 py-0.5 rounded bg-surfaceCanvas font-bold text-textPrimary text-[11px]">3 Malam</span>
+                <span class="px-2 py-0.5 rounded bg-surfaceCanvas font-bold text-textPrimary text-[11px]">{{ item.durationNights }} Malam</span>
               </td>
-              <td class="p-3 text-right font-medium text-textPrimary">Rp 850.000</td>
-              <td class="p-3 text-right font-bold text-primary font-headline">Rp 5.100.000</td>
+              <td class="p-3 text-right font-medium text-textPrimary">Rp {{ (item.pricePerNight || 0).toLocaleString('id-ID') }}</td>
+              <td class="p-3 text-right font-bold text-primary font-headline">Rp {{ (item.subtotalPrice || 0).toLocaleString('id-ID') }}</td>
               <td class="p-3 text-center">
-                <!-- Tombol Pemicu Modal Alokasi Data Penginap -->
                 <button
                   type="button"
-                  @click="isGuestsModalOpen = true"
-                  class="px-3 py-1 rounded-lg bg-blue-50 text-blue-700 font-bold text-[11px] hover:bg-blue-100 transition-colors inline-flex items-center gap-1 shadow-2xs"
+                  @click="openGuestsModal(item)"
+                  class="px-3 py-1 rounded-lg bg-blue-50 text-blue-700 font-bold text-[11px] hover:bg-blue-100 transition-colors inline-flex items-center gap-1 shadow-2xs cursor-pointer"
                 >
                   <span class="material-symbols-outlined text-[14px]">person_add</span>
-                  <span>Isi Data Penginap 1 (2/4 Tamu)</span>
+                  <span>Isi Data Penginap ({{ item.guests?.length || 0 }} Tamu)</span>
                 </button>
               </td>
               <td class="p-3 text-center">
-                <div class="flex items-center justify-center gap-1.5">
-                  <button type="button" class="p-1 text-textMuted hover:text-textPrimary" title="Edit"><span class="material-symbols-outlined text-[16px]">edit</span></button>
-                  <button type="button" class="p-1 text-error hover:text-red-700" title="Hapus"><span class="material-symbols-outlined text-[16px]">delete</span></button>
-                </div>
+                <button
+                  type="button"
+                  @click="orderStore.removeHotel(item.id)"
+                  class="p-1 text-rose-600 hover:text-rose-800 transition-colors cursor-pointer"
+                  title="Hapus"
+                >
+                  <span class="material-symbols-outlined text-[16px]">delete</span>
+                </button>
               </td>
             </tr>
           </tbody>
         </table>
       </div>
-
-      <!-- Banner Ringkasan / Kepatuhan Plafon -->
-      <div class="p-3.5 bg-emerald-50/80 border border-emerald-100 rounded-xl flex items-center justify-between text-xs text-emerald-800">
-        <div class="flex items-center gap-2">
-          <span class="material-symbols-outlined text-emerald-600 text-[18px]">verified</span>
-          <span><strong>Total Estimasi Akomodasi: Rp 5.100.000</strong> • Plafon SBU Sesuai Standar BPJS TK (Maks. Rp 950.000 / Malam)</span>
-        </div>
-        <span class="text-[11px] text-emerald-600 font-medium">✓ Termasuk Pajak & Sarapan Pagi</span>
-      </div>
-    </div>
-
-    <!-- Ketentuan Plafon Collapsible Banner -->
-    <div class="border border-gray-100 rounded-xl bg-surfaceCard p-4 flex items-center justify-between cursor-pointer hover:bg-surfaceCanvas/40 transition-colors">
-      <div class="flex items-center gap-3">
-        <span class="material-symbols-outlined text-textMuted text-[20px]">help_outline</span>
-        <div>
-          <h4 class="text-xs font-bold text-textPrimary font-headline">Ketentuan Plafon Hotel Dinas Wilayah Jawa Timur</h4>
-          <p class="text-[11px] text-textMuted">Pedoman Peraturan Direksi BPJS Ketenagakerjaan No. PERDIR/28/092025</p>
-        </div>
-      </div>
-      <span class="material-symbols-outlined text-textMuted text-[20px]">keyboard_arrow_down</span>
     </div>
 
     <!-- Modal Alokasi Data Penginap -->
     <HotelGuestsModal
       :is-open="isGuestsModalOpen"
-      hotel-name="Hotel Santika Premiere Gubeng Surabaya"
-      reservation-id="HTL-202605-042"
+      :hotel-item="selectedHotelForGuests"
       @close="isGuestsModalOpen = false"
       @save="handleGuestsSaved"
+    />
+
+    <!-- Modal Master Hotel -->
+    <SelectHotelModal
+      :is-open="isHotelModalOpen"
+      @close="isHotelModalOpen = false"
+      @select="handleHotelSelected"
     />
   </div>
 </template>
