@@ -3,12 +3,29 @@ import { ref } from 'vue'
 import { UserService } from '@/services/userService'
 import type { UserItem, UserDTO } from '@/models/userModel'
 
+export interface PaginationMeta {
+  total: number
+  page: number
+  limit: number
+  totalPages: number
+}
+
 export const useUserStore = defineStore('userStore', () => {
   const users = ref<UserItem[]>([])
   const loading = ref(false)
   const errorMessage = ref('')
   const searchQuery = ref('')
   const selectedRoleFilter = ref('ALL')
+
+  // 🟢 1. Tambahkan State untuk Paginasi
+  const currentPage = ref(1)
+  const limit = ref(10)
+  const meta = ref<PaginationMeta>({
+    total: 0,
+    page: 1,
+    limit: 10,
+    totalPages: 1,
+  })
 
   // Fetch all users dari backend
   async function fetchUsers() {
@@ -18,13 +35,28 @@ export const useUserStore = defineStore('userStore', () => {
       const response = await UserService.getUsers({
         search: searchQuery.value,
         role: selectedRoleFilter.value !== 'ALL' ? selectedRoleFilter.value : undefined,
+        page: currentPage.value, // 🟢 Kirim halaman aktif
+        limit: limit.value,      // 🟢 Kirim limit
       })
+
       users.value = response.data
+      
+      // 🟢 Simpan metadata paginasi dari response backend (jika ada)
+      if (response.meta) {
+        meta.value = response.meta
+      }
     } catch (err: any) {
       errorMessage.value = err.response?.data?.message || 'Gagal mengambil data user.'
     } finally {
       loading.value = false
     }
+  }
+
+  // 🟢 2. Buat Fungsi setPage untuk Mengubah Halaman
+  function setPage(page: number) {
+    if (page < 1) return
+    currentPage.value = page
+    fetchUsers()
   }
 
   // Add User via POST /api/auth/register
@@ -64,13 +96,17 @@ export const useUserStore = defineStore('userStore', () => {
     }
   }
 
+  // 🟢 3. Pastikan Semua State & Function Di-return
   return {
     users,
     loading,
     errorMessage,
     searchQuery,
     selectedRoleFilter,
+    currentPage,
+    meta,
     fetchUsers,
+    setPage,
     addUser,
     editUser,
     toggleStatus,

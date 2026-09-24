@@ -13,8 +13,9 @@ const isRoundTrip = ref(true)
 // State Modal LOV Personel
 const isTravelerModalOpen = ref(false)
 
-// State Form Personel (Clean/Kosongkan untuk input user)
+// State Form Personel
 const form = ref({
+  userId: null as string | null,
   name: '',
   npk: '',
   jabatan: '',
@@ -22,11 +23,11 @@ const form = ref({
   originCity: 'Jakarta (CGK / HLP)',
   destCity: 'Surabaya (SUB)',
   depDate: '',
-  depTime: '08:30 WIB',
+  depTime: '08:30', // Format waktu HH:mm untuk input type="time"
   maskapai: 'Garuda Indonesia',
   kelas: 'Ekonomi (Kelas Y)',
   retDate: '',
-  retTime: '17:45 WIB',
+  retTime: '17:45', // Format waktu HH:mm untuk input type="time"
   retMaskapai: 'Garuda Indonesia',
   retKelas: 'Ekonomi (Kelas Y)',
   estimatedPrice: 2816666,
@@ -34,6 +35,7 @@ const form = ref({
 
 // Function Callback saat Personel Dipilih dari Modal LOV
 function handleTravelerSelected(emp: EmployeeItem) {
+  form.value.userId = emp.id
   form.value.name = emp.name
   form.value.npk = emp.npk
   form.value.jabatan = emp.jabatan ? `${emp.jabatan} (${emp.golongan || ''})` : ''
@@ -43,12 +45,18 @@ function handleTravelerSelected(emp: EmployeeItem) {
 // Icon Dynamic per Moda Transportasi
 const transportIcon = computed(() => {
   switch (orderStore.activeTransport) {
-    case 'flight': return 'flight_takeoff'
-    case 'train': return 'train'
-    case 'sea': return 'directions_boat'
-    case 'bus': return 'directions_bus'
-    case 'car': return 'directions_car'
-    default: return 'flight_takeoff'
+    case 'flight':
+      return 'flight_takeoff'
+    case 'train':
+      return 'train'
+    case 'sea':
+      return 'directions_boat'
+    case 'bus':
+      return 'directions_bus'
+    case 'car':
+      return 'directions_car'
+    default:
+      return 'flight_takeoff'
   }
 })
 
@@ -66,45 +74,58 @@ function handleAddTransport() {
   const originCode = form.value.originCity.match(/\(([^)]+)\)/)?.[1] || 'JKT'
   const destCode = form.value.destCity.match(/\(([^)]+)\)/)?.[1] || 'SUB'
 
+  // Format label jam agar rapi saat disimpan ke store (misal: "08:30 WIB")
+  const formattedDepTime = form.value.depTime ? `${form.value.depTime} WIB` : ''
+  const formattedRetTime = form.value.retTime ? `${form.value.retTime} WIB` : ''
+
   // Push Data ke Store Pinia
- orderStore.addTraveller({
-  category: activeCategory.value,
-  userId: (form.value as any).userId || null,
-  name: form.value.name,
-  npkOrKtp: form.value.npk || '-',
-  jabatanOrInstansi: form.value.jabatan || '-',
-  phone: form.value.phone || '-',
+  orderStore.addTraveller({
+    category: activeCategory.value,
+    userId: form.value.userId || null,
+    name: form.value.name,
+    npkOrKtp: form.value.npk || '-',
+    jabatanOrInstansi: form.value.jabatan || '-',
+    phone: form.value.phone || '-',
 
-  // Route & City IDs
-  route: `${originCode} ⇄ ${destCode}`,
-  originCityId: (form.value as any).originCityId || 1,
-  destinationCityId: (form.value as any).destinationCityId || 2,
+    // Route & City IDs
+    route: `${originCode} ⇄ ${destCode}`,
+    originCityId: (form.value as any).originCityId || 1,
+    destinationCityId: (form.value as any).destinationCityId || 2,
 
-  // Departure Leg
-  departureDate: form.value.depDate,
-  departureTime: form.value.depTime,
-  departureInfo: `${form.value.depDate} · ${form.value.depTime} (Pergi)`,
-  maskapai: form.value.maskapai || 'Garuda Indonesia',
-  kelas: (form.value as any).kelas || 'Ekonomi (Kelas Y)',
-  transportId: (form.value as any).transportId || 1,
-  transportClassId: (form.value as any).transportClassId || 1,
+    // Departure Leg
+    departureDate: form.value.depDate,
+    departureTime: formattedDepTime,
+    departureInfo: `${form.value.depDate} · ${formattedDepTime} (Pergi)`,
+    maskapai: form.value.maskapai || 'Garuda Indonesia',
+    kelas: (form.value as any).kelas || 'Ekonomi (Kelas Y)',
+    transportId: (form.value as any).transportId || 1,
+    transportClassId: (form.value as any).transportClassId || 1,
 
-  // Return Leg
-  isRoundTrip: isRoundTrip.value,
-  returnDate: isRoundTrip.value ? (form.value.retDate || form.value.depDate) : null,
-  returnTime: isRoundTrip.value ? form.value.retTime : null,
-  returnInfo: isRoundTrip.value
-    ? `${form.value.retDate || form.value.depDate} · ${form.value.retTime} (Pulang)`
-    : null,
-  returnMaskapai: isRoundTrip.value ? ((form.value as any).returnMaskapai || form.value.maskapai) : null,
-  returnKelas: isRoundTrip.value ? ((form.value as any).returnKelas || (form.value as any).kelas) : null,
-  returnTransportId: isRoundTrip.value ? ((form.value as any).returnTransportId || (form.value as any).transportId || 1) : null,
-  returnTransportClassId: isRoundTrip.value ? ((form.value as any).returnTransportClassId || 1) : null,
+    // Return Leg
+    isRoundTrip: isRoundTrip.value,
+    returnDate: isRoundTrip.value ? form.value.retDate || form.value.depDate : null,
+    returnTime: isRoundTrip.value ? formattedRetTime : null,
+    returnInfo: isRoundTrip.value
+      ? `${form.value.retDate || form.value.depDate} · ${formattedRetTime} (Pulang)`
+      : null,
+    returnMaskapai: isRoundTrip.value
+      ? (form.value as any).returnMaskapai || form.value.maskapai
+      : null,
+    returnKelas: isRoundTrip.value
+      ? (form.value as any).returnKelas || (form.value as any).kelas
+      : null,
+    returnTransportId: isRoundTrip.value
+      ? (form.value as any).returnTransportId || (form.value as any).transportId || 1
+      : null,
+    returnTransportClassId: isRoundTrip.value
+      ? (form.value as any).returnTransportClassId || 1
+      : null,
 
-  price: form.value.estimatedPrice || 0,
-})
+    price: form.value.estimatedPrice || 0,
+  })
 
   // Reset Input Form Personel
+  form.value.userId = null
   form.value.name = ''
   form.value.npk = ''
   form.value.jabatan = ''
@@ -115,7 +136,9 @@ function handleAddTransport() {
 <template>
   <div class="bg-surfaceCard rounded-2xl border border-gray-100 p-6 shadow-2xs space-y-5 font-body">
     <!-- Header Section 2 -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-100">
+    <div
+      class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-100"
+    >
       <div class="flex items-start gap-3">
         <div class="p-2 rounded-lg bg-sky-50 text-sky-700 shrink-0 mt-0.5">
           <span class="material-symbols-outlined text-[22px]">{{ transportIcon }}</span>
@@ -131,7 +154,9 @@ function handleAddTransport() {
       </div>
 
       <!-- Category Tab Buttons -->
-      <div class="flex items-center gap-1 bg-surfaceCanvas p-1 rounded-xl border border-gray-200/80 shrink-0">
+      <div
+        class="flex items-center gap-1 bg-surfaceCanvas p-1 rounded-xl border border-gray-200/80 shrink-0"
+      >
         <button
           type="button"
           @click="activeCategory = 'INTERNAL'"
@@ -139,7 +164,7 @@ function handleAddTransport() {
             'px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5',
             activeCategory === 'INTERNAL'
               ? 'bg-surfaceCard text-emerald-800 shadow-2xs'
-              : 'text-textMuted hover:text-textPrimary'
+              : 'text-textMuted hover:text-textPrimary',
           ]"
         >
           <span class="material-symbols-outlined text-[16px]">badge</span>
@@ -152,7 +177,7 @@ function handleAddTransport() {
             'px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5',
             activeCategory === 'EKSTERNAL'
               ? 'bg-surfaceCard text-emerald-800 shadow-2xs'
-              : 'text-textMuted hover:text-textPrimary'
+              : 'text-textMuted hover:text-textPrimary',
           ]"
         >
           <span class="material-symbols-outlined text-[16px]">group</span>
@@ -164,14 +189,20 @@ function handleAddTransport() {
     <!-- 1. Form Penambahan Personel -->
     <div class="space-y-3">
       <div class="flex items-center justify-between">
-        <span class="text-xs font-bold text-textPrimary uppercase tracking-wider font-headline flex items-center gap-1.5">
+        <span
+          class="text-xs font-bold text-textPrimary uppercase tracking-wider font-headline flex items-center gap-1.5"
+        >
           <span class="material-symbols-outlined text-primary text-[18px]">person_add</span>
           <span>Form Penambahan Personel</span>
         </span>
-        <span class="text-[11px] text-textMuted">Data penerbangan diverifikasi otomatis dengan kebijakan dinas</span>
+        <span class="text-[11px] text-textMuted"
+          >Data penerbangan diverifikasi otomatis dengan kebijakan dinas</span
+        >
       </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 bg-surfaceCard p-4 rounded-xl border border-gray-100 shadow-2xs">
+      <div
+        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 bg-surfaceCard p-4 rounded-xl border border-gray-100 shadow-2xs"
+      >
         <div class="flex flex-col">
           <label class="text-xs font-semibold text-textPrimary mb-1">Nama Traveller *</label>
           <div class="relative cursor-pointer" @click="isTravelerModalOpen = true">
@@ -182,7 +213,10 @@ function handleAddTransport() {
               placeholder="Pilih nama karyawan..."
               class="w-full h-10 pl-3 pr-9 rounded-xl bg-surfaceCard border border-gray-200 text-xs font-bold text-textPrimary focus:outline-none focus:border-primary cursor-pointer hover:border-primary/60 transition-all"
             />
-            <span class="material-symbols-outlined absolute right-3 top-2.5 text-primary text-[18px]">search</span>
+            <span
+              class="material-symbols-outlined absolute right-3 top-2.5 text-primary text-[18px]"
+              >search</span
+            >
           </div>
         </div>
 
@@ -211,7 +245,9 @@ function handleAddTransport() {
         <div class="flex flex-col">
           <label class="text-xs font-semibold text-textPrimary mb-1">No. Handphone *</label>
           <div class="relative flex items-center">
-            <span class="material-symbols-outlined absolute left-3 text-textMuted text-[18px]">call</span>
+            <span class="material-symbols-outlined absolute left-3 text-textMuted text-[18px]"
+              >call</span
+            >
             <input
               type="text"
               v-model="form.phone"
@@ -226,7 +262,9 @@ function handleAddTransport() {
     <!-- 2. Form Penerbangan Pergi (Departure Leg) -->
     <div class="space-y-3">
       <div class="p-4 rounded-2xl bg-surfaceCanvas/60 border border-gray-100 space-y-3">
-        <span class="text-xs font-bold text-sky-800 uppercase tracking-wider flex items-center gap-1.5 font-headline">
+        <span
+          class="text-xs font-bold text-sky-800 uppercase tracking-wider flex items-center gap-1.5 font-headline"
+        >
           <span class="material-symbols-outlined text-[18px]">{{ transportIcon }}</span>
           <span>Penerbangan Pergi (Departure Leg)</span>
         </span>
@@ -234,7 +272,10 @@ function handleAddTransport() {
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <div class="flex flex-col">
             <label class="text-xs font-semibold text-textPrimary mb-1">Kota Berangkat *</label>
-            <select v-model="form.originCity" class="h-10 px-3 rounded-xl bg-surfaceCard border border-gray-200 text-xs text-textPrimary focus:outline-none focus:border-primary">
+            <select
+              v-model="form.originCity"
+              class="h-10 px-3 rounded-xl bg-surfaceCard border border-gray-200 text-xs text-textPrimary focus:outline-none focus:border-primary"
+            >
               <option>Jakarta (CGK / HLP)</option>
               <option>Surabaya (SUB)</option>
               <option>Medan (KNO)</option>
@@ -243,7 +284,10 @@ function handleAddTransport() {
 
           <div class="flex flex-col">
             <label class="text-xs font-semibold text-textPrimary mb-1">Kota Tujuan *</label>
-            <select v-model="form.destCity" class="h-10 px-3 rounded-xl bg-surfaceCard border border-gray-200 text-xs text-textPrimary focus:outline-none focus:border-primary">
+            <select
+              v-model="form.destCity"
+              class="h-10 px-3 rounded-xl bg-surfaceCard border border-gray-200 text-xs text-textPrimary focus:outline-none focus:border-primary"
+            >
               <option>Surabaya (SUB)</option>
               <option>Jakarta (CGK / HLP)</option>
               <option>Denpasar (DPS)</option>
@@ -261,16 +305,19 @@ function handleAddTransport() {
 
           <div class="flex flex-col">
             <label class="text-xs font-semibold text-textPrimary mb-1">Jam Berangkat *</label>
-            <select v-model="form.depTime" class="h-10 px-3 rounded-xl bg-surfaceCard border border-gray-200 text-xs text-textPrimary font-mono text-center focus:outline-none focus:border-primary">
-              <option>08:30 WIB</option>
-              <option>11:15 WIB</option>
-              <option>16:45 WIB</option>
-            </select>
+            <input
+              type="time"
+              v-model="form.depTime"
+              class="h-10 px-3 rounded-xl bg-surfaceCard border border-gray-200 text-xs text-textPrimary font-mono text-center focus:outline-none focus:border-primary cursor-pointer"
+            />
           </div>
 
           <div class="flex flex-col sm:col-span-2">
             <label class="text-xs font-semibold text-textPrimary mb-1">Nama Maskapai *</label>
-            <select v-model="form.maskapai" class="h-10 px-3 rounded-xl bg-surfaceCard border border-gray-200 text-xs text-textPrimary focus:outline-none focus:border-primary">
+            <select
+              v-model="form.maskapai"
+              class="h-10 px-3 rounded-xl bg-surfaceCard border border-gray-200 text-xs text-textPrimary focus:outline-none focus:border-primary"
+            >
               <option>Garuda Indonesia</option>
               <option>Batik Air</option>
               <option>Pelita Air</option>
@@ -279,7 +326,10 @@ function handleAddTransport() {
 
           <div class="flex flex-col sm:col-span-2">
             <label class="text-xs font-semibold text-textPrimary mb-1">Kelas Maskapai *</label>
-            <select v-model="form.kelas" class="h-10 px-3 rounded-xl bg-surfaceCard border border-gray-200 text-xs text-textPrimary focus:outline-none focus:border-primary">
+            <select
+              v-model="form.kelas"
+              class="h-10 px-3 rounded-xl bg-surfaceCard border border-gray-200 text-xs text-textPrimary focus:outline-none focus:border-primary"
+            >
               <option>Ekonomi (Kelas Y)</option>
               <option>Ekonomi Fleksibel</option>
               <option>Bisnis (Khusus Direksi / Kakanwil)</option>
@@ -299,15 +349,25 @@ function handleAddTransport() {
             v-model="isRoundTrip"
             class="w-4 h-4 text-emerald-800 rounded border-gray-300 focus:ring-emerald-700"
           />
-          <label for="roundtrip-check" class="text-xs font-bold text-textPrimary font-headline cursor-pointer select-none flex items-center gap-1.5">
+          <label
+            for="roundtrip-check"
+            class="text-xs font-bold text-textPrimary font-headline cursor-pointer select-none flex items-center gap-1.5"
+          >
             Pulang-Pergi (PP)
-            <span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold">AKTIF</span>
+            <span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold"
+              >AKTIF</span
+            >
           </label>
         </div>
-        <span class="text-[11px] text-textMuted">Rute kembali akan dibuatkan otomatis berlawanan arah</span>
+        <span class="text-[11px] text-textMuted"
+          >Rute kembali akan dibuatkan otomatis berlawanan arah</span
+        >
       </div>
 
-      <div v-if="isRoundTrip" class="p-4 rounded-2xl bg-surfaceCanvas/60 border border-gray-100 space-y-3">
+      <div
+        v-if="isRoundTrip"
+        class="p-4 rounded-2xl bg-surfaceCanvas/60 border border-gray-100 space-y-3"
+      >
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <div class="flex flex-col">
             <label class="text-xs font-semibold text-textPrimary mb-1">Tanggal Pulang *</label>
@@ -320,16 +380,19 @@ function handleAddTransport() {
 
           <div class="flex flex-col">
             <label class="text-xs font-semibold text-textPrimary mb-1">Jam Pulang *</label>
-            <select v-model="form.retTime" class="h-10 px-3 rounded-xl bg-surfaceCard border border-gray-200 text-xs text-textPrimary font-mono text-center focus:outline-none focus:border-primary">
-              <option>17:45 WIB</option>
-              <option>14:20 WIB</option>
-              <option>20:10 WIB</option>
-            </select>
+            <input
+              type="time"
+              v-model="form.retTime"
+              class="h-10 px-3 rounded-xl bg-surfaceCard border border-gray-200 text-xs text-textPrimary font-mono text-center focus:outline-none focus:border-primary cursor-pointer"
+            />
           </div>
 
           <div class="flex flex-col">
             <label class="text-xs font-semibold text-textPrimary mb-1">Maskapai Pulang *</label>
-            <select v-model="form.retMaskapai" class="h-10 px-3 rounded-xl bg-surfaceCard border border-gray-200 text-xs text-textPrimary focus:outline-none focus:border-primary">
+            <select
+              v-model="form.retMaskapai"
+              class="h-10 px-3 rounded-xl bg-surfaceCard border border-gray-200 text-xs text-textPrimary focus:outline-none focus:border-primary"
+            >
               <option>Garuda Indonesia</option>
               <option>Batik Air</option>
             </select>
@@ -337,7 +400,10 @@ function handleAddTransport() {
 
           <div class="flex flex-col">
             <label class="text-xs font-semibold text-textPrimary mb-1">Kelas Pulang *</label>
-            <select v-model="form.retKelas" class="h-10 px-3 rounded-xl bg-surfaceCard border border-gray-200 text-xs text-textPrimary focus:outline-none focus:border-primary">
+            <select
+              v-model="form.retKelas"
+              class="h-10 px-3 rounded-xl bg-surfaceCard border border-gray-200 text-xs text-textPrimary focus:outline-none focus:border-primary"
+            >
               <option>Ekonomi (Kelas Y)</option>
               <option>Ekonomi Fleksibel</option>
             </select>

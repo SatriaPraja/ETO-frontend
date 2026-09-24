@@ -31,3 +31,27 @@ export interface UserDTO {
   unitKerjaNama: string
   role: UserRole
 }
+
+// 🟢 1. Interface Query Parameter untuk Fetch Users
+export interface GetUsersQuery {
+  search?: string
+  role?: string
+  page?: number
+  limit?: number
+}
+
+// 🟢 2. Interface Metadata Paginasi
+export interface PaginationMeta {
+  total: number
+  page: number
+  limit: number
+  totalPages: number
+}
+
+// 🟢 3. Interface Wrapper Response API Berpaginasi
+export interface UserPaginatedResponse<T> {
+  success: boolean
+  message: string
+  data: T
+  meta?: PaginationMeta
+}

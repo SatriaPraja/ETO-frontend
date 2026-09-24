@@ -203,7 +203,7 @@ function hasAccess(allowedRoles: string[]): boolean {
                 <span class="material-symbols-outlined text-[18px]" :class="isRouteActive('/history') ? 'text-primary' : 'text-textMuted'">receipt_long</span>
                 <span>Riwayat Pengajuan</span>
               </div>
-              <span class="w-4 h-4 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold flex items-center justify-center">2</span>
+             
             </router-link>
 
             <router-link

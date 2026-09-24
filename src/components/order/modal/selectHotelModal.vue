@@ -4,7 +4,8 @@ import { ref, watch } from 'vue'
 export interface HotelItem {
   id: number
   name: string
-  cityName: string
+  cityId?: number | null
+  cityName?: string
   starRating: number
   address?: string
   priceRange?: string

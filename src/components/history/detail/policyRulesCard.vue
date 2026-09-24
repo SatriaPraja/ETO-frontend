@@ -1,52 +1,54 @@
 <template>
-  <div class="bg-surfaceCard p-6 rounded-xl border border-gray-100 shadow-2xs space-y-4 font-body">
-    <!-- Title -->
+  <div class="bg-surfaceCard p-6 rounded-2xl border border-gray-100 shadow-2xs space-y-4 font-body">
     <div class="flex items-center gap-2 pb-2 border-b border-gray-100">
-      <span class="material-symbols-outlined text-primary text-[20px]">policy</span>
+      <span class="material-symbols-outlined text-primary text-[20px]">gavel</span>
       <h3 class="text-sm font-bold text-textPrimary font-headline">Kebijakan & Ketentuan Tiket</h3>
     </div>
 
-    <!-- Items List -->
-    <div class="space-y-3 text-xs">
-      <!-- 1. Auto Cancellation -->
-      <div class="space-y-1">
-        <div class="flex items-center gap-1.5 text-textPrimary font-bold">
-          <span class="material-symbols-outlined text-amber-600 text-[16px]">schedule</span>
-          <span>Auto-Cancellation H-2</span>
+    <div class="space-y-3 text-xs text-textMuted">
+      <div class="flex items-start gap-2.5">
+        <span class="material-symbols-outlined text-amber-500 text-[18px] shrink-0 mt-0.5"
+          >schedule</span
+        >
+        <div>
+          <strong class="text-textPrimary block font-bold text-xs">Auto-Cancellation H-2</strong>
+          <span
+            >Pemesanan tiket pesawat otomatis dibatalkan jika persetujuan pimpinan belum diterbitkan
+            paling lambat 48 jam sebelum keberangkatan.</span
+          >
         </div>
-        <p class="text-textMuted text-[11px] leading-relaxed pl-5">
-          Pemesanan tiket pesawat otomatis dibatalkan sistem jika persetujuan pimpinan belum diterbitkan paling lambat 48 jam sebelum keberangkatan.
-        </p>
       </div>
 
-      <!-- 2. Refund & Reschedule -->
-      <div class="space-y-1">
-        <div class="flex items-center gap-1.5 text-textPrimary font-bold">
-          <span class="material-symbols-outlined text-primary text-[16px]">published_with_changes</span>
-          <span>Kebijakan Refund & Reschedule</span>
+      <div class="flex items-start gap-2.5">
+        <span class="material-symbols-outlined text-emerald-600 text-[18px] shrink-0 mt-0.5"
+          >published_with_changes</span
+        >
+        <div>
+          <strong class="text-textPrimary block font-bold text-xs"
+            >Kebijakan Refund & Reschedule</strong
+          >
+          <span
+            >Perubahan tanggal setelah tiket issued dikenakan biaya administrasi maskapai dan harus
+            melalui surat nota dinas persetujuan ulang.</span
+          >
         </div>
-        <p class="text-textMuted text-[11px] leading-relaxed pl-5">
-          Perubahan tanggal setelah tiket issued dikenakan biaya administrasi maskapai dan harus melalui surat nota dinas persetujuan ulang.
-        </p>
       </div>
 
-      <!-- 3. Dokumen SOP -->
-      <div class="pt-2 border-t border-gray-100 space-y-2">
-        <a href="#" class="flex items-center gap-1.5 font-bold text-primary hover:underline text-xs">
-          <span class="material-symbols-outlined text-[16px]">description</span>
-          <span>Dokumen SOP Resmi</span>
-        </a>
-        <a href="#" class="text-[11px] text-textMuted hover:underline block pl-5">
-          Lihat SOP Perjalanan Dinas 2026 ↗
-        </a>
+      <div class="flex items-start gap-2.5">
+        <span class="material-symbols-outlined text-blue-600 text-[18px] shrink-0 mt-0.5"
+          >description</span
+        >
+        <div>
+          <strong class="text-textPrimary block font-bold text-xs">Dokumen SOP Resmi</strong>
+          <a
+            href="#"
+            class="text-primary font-bold hover:underline inline-flex items-center gap-1 mt-0.5"
+          >
+            <span>Lihat SOP Perjalanan Dinas 2026</span>
+            <span class="material-symbols-outlined text-[12px]">open_in_new</span>
+          </a>
+        </div>
       </div>
-    </div>
-
-    <!-- Helpdesk Banner -->
-    <div class="pt-2">
-      <p class="text-[11px] text-textMuted text-center">
-        Butuh bantuan mendesak? <a href="#" class="font-bold text-primary hover:underline">Helpdesk Travel</a>
-      </p>
     </div>
   </div>
 </template>

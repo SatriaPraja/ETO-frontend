@@ -1,14 +1,24 @@
 <script setup lang="ts">
 import type { UserItem } from '@/models/userModel'
 
+// Interface metadata paginasi dari API
+export interface PaginationMeta {
+  total: number
+  page: number
+  limit: number
+  totalPages: number
+}
+
 defineProps<{
   users: UserItem[]
   loading: boolean
+  meta?: PaginationMeta
 }>()
 
 const emit = defineEmits<{
   (e: 'edit', user: UserItem): void
   (e: 'toggle-status', user: UserItem): void
+  (e: 'change-page', page: number): void
 }>()
 
 function getRoleBadgeClass(role: string) {
@@ -31,6 +41,7 @@ function getRoleBadgeClass(role: string) {
 
 <template>
   <div class="bg-surfaceCard rounded-2xl border border-gray-100 shadow-2xs overflow-hidden">
+    <!-- Tabel Utama -->
     <div class="overflow-x-auto">
       <table class="w-full text-left border-collapse">
         <thead>
@@ -43,6 +54,7 @@ function getRoleBadgeClass(role: string) {
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100 text-xs font-body">
+          <!-- Loading State -->
           <tr v-if="loading">
             <td colspan="5" class="py-12 text-center text-textMuted">
               <div class="flex flex-col items-center justify-center gap-2">
@@ -52,6 +64,7 @@ function getRoleBadgeClass(role: string) {
             </td>
           </tr>
 
+          <!-- Empty State -->
           <tr v-else-if="users.length === 0">
             <td colspan="5" class="py-12 text-center text-textMuted">
               <div class="flex flex-col items-center justify-center gap-1">
@@ -62,7 +75,8 @@ function getRoleBadgeClass(role: string) {
             </td>
           </tr>
 
-          <tr v-for="u in users" :key="u.id" class="hover:bg-surfaceCanvas/50 transition-colors">
+          <!-- List Data Pengguna -->
+          <tr v-else v-for="u in users" :key="u.id" class="hover:bg-surfaceCanvas/50 transition-colors">
             <td class="py-3.5 px-4">
               <div class="flex items-center gap-3">
                 <div class="w-9 h-9 rounded-full bg-primary/10 text-primary font-bold flex items-center justify-center text-xs shrink-0 uppercase shadow-2xs">
@@ -112,7 +126,7 @@ function getRoleBadgeClass(role: string) {
                 <button
                   type="button"
                   @click="emit('edit', u)"
-                  class="p-1.5 text-textMuted hover:text-primary hover:bg-surfaceCanvas rounded-lg transition-colors"
+                  class="p-1.5 text-textMuted hover:text-primary hover:bg-surfaceCanvas rounded-lg transition-colors cursor-pointer"
                   title="Edit Profil & Role"
                 >
                   <span class="material-symbols-outlined text-[18px]">edit</span>
@@ -121,7 +135,7 @@ function getRoleBadgeClass(role: string) {
                   type="button"
                   @click="emit('toggle-status', u)"
                   :class="[
-                    'p-1.5 rounded-lg transition-colors',
+                    'p-1.5 rounded-lg transition-colors cursor-pointer',
                     u.status === 'active' ? 'text-textMuted hover:text-error hover:bg-errorContainer/30' : 'text-textMuted hover:text-emerald-700 hover:bg-emerald-50'
                   ]"
                   :title="u.status === 'active' ? 'Nonaktifkan Akses User' : 'Aktifkan Akses User'"
@@ -135,6 +149,38 @@ function getRoleBadgeClass(role: string) {
           </tr>
         </tbody>
       </table>
+    </div>
+
+    <!-- Paginasi Footer -->
+    <div 
+      v-if="meta && !loading && users.length > 0"
+      class="p-4 bg-surfaceCanvas/40 border-t border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-textMuted"
+    >
+      <div>
+        Menampilkan <strong>{{ users.length }}</strong> dari <strong>{{ meta.total }}</strong> data pengguna
+      </div>
+
+      <div class="flex items-center gap-1">
+        <button
+          type="button"
+          @click="emit('change-page', meta.page - 1)"
+          :disabled="meta.page <= 1"
+          class="w-7 h-7 rounded border border-gray-200 bg-surfaceCard flex items-center justify-center text-textMuted hover:bg-surfaceCanvas disabled:opacity-40 cursor-pointer"
+        >
+          ‹
+        </button>
+        <span class="px-3 font-bold text-textPrimary">
+          Halaman {{ meta.page }} dari {{ meta.totalPages || 1 }}
+        </span>
+        <button
+          type="button"
+          @click="emit('change-page', meta.page + 1)"
+          :disabled="meta.page >= meta.totalPages"
+          class="w-7 h-7 rounded border border-gray-200 bg-surfaceCard flex items-center justify-center text-textPrimary hover:bg-surfaceCanvas disabled:opacity-40 cursor-pointer"
+        >
+          ›
+        </button>
+      </div>
     </div>
   </div>
 </template>

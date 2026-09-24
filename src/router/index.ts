@@ -4,7 +4,6 @@ import { useAuthStore } from '@/stores/authStore'
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
-    // 1. RUTE LOGIN
     {
       path: '/login',
       name: 'login',
@@ -35,21 +34,24 @@ const router = createRouter({
           name: 'history',
           component: () => import('../views/history/historyView.vue'),
         },
+
+        // 🟢 FIX 1 & 2: Ubah parameter ke :toCode dan arahkan import ke views/history/
         {
-          path: 'history/order-detail/:id?',
+          path: 'history/order-detail/:toCode',
           name: 'order-detail',
-          component: () => import('../views/travel/orderDetailView.vue'),
+          component: () => import('../views/history/[toCode].vue'), // atau orderDetailView.vue jika file sudah di-rename
         },
+        // {
+        //   path: 'history/edit-order/:toCode',
+        //   name: 'edit-order',
+        //   component: () => import('../views/history/orderEditView.vue'),
+        // },
         {
-          path: 'history/edit-order/:id?',
-          name: 'edit-order',
-          component: () => import('../views/travel/orderEditView.vue'),
-        },
-        {
-          path: 'history/print-pdf/:id?',
+          path: 'history/print-pdf/:toCode',
           name: 'print-pdf',
           component: () => import('../views/history/pdfPreviewView.vue'),
         },
+
         {
           path: 'approvals',
           name: 'approvals',
@@ -95,21 +97,18 @@ const router = createRouter({
   ],
 })
 
-// Navigation Guard Proteksi Sesi
+// Navigation Guard
 router.beforeEach(async (to, _from, next) => {
   const authStore = useAuthStore()
 
-  // Verifikasi sesi cookie saat perama kali aplikasi dimuat
   if (!authStore.isAuthenticated) {
     await authStore.fetchUser()
   }
 
-  // Jika rute butuh auth dan user belum login
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     return next({ name: 'login' })
   }
 
-  // Jika user sudah terotentikasi tetapi membuka /login
   if (to.meta.requiresGuest && authStore.isAuthenticated) {
     return next({ name: 'dashboard' })
   }

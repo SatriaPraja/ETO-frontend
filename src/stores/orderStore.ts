@@ -90,6 +90,16 @@ export const useOrderStore = defineStore('order', () => {
   const isTransportAdded = ref<boolean>(false)
   const isSubmitting = ref<boolean>(false)
 
+  // 🟢 Draf Info State (Dinamis Sesuai Store)
+  const lastSavedTime = ref<string>('Diperbarui baru saja')
+  
+  const draftCode = computed(() => {
+    if (formInfo.value.existingToOption || formInfo.value.toCode) {
+      return formInfo.value.existingToOption || formInfo.value.toCode
+    }
+    return activeTransport.value === 'hotel' ? 'Draft-HTL-089' : 'Draft-ORD-052'
+  })
+
   // Existing TO Modal State
   const existingOrders = ref<ExistingTOItem[]>([])
   const isLoading = ref<boolean>(false)
@@ -299,7 +309,6 @@ export const useOrderStore = defineStore('order', () => {
 
     isSubmitting.value = true
     try {
-      // 🟢 Sanitize data hotels & guests agar presisi sesuai contoh JSON
       const cleanHotelsPayload = hotels.value.map((hotel) => ({
         hotelId: hotel.hotelId || null,
         hotelNameCustom: hotel.hotelNameCustom,
@@ -311,10 +320,9 @@ export const useOrderStore = defineStore('order', () => {
         pricePerNight: hotel.pricePerNight,
         subtotalPrice: hotel.subtotalPrice,
         guests: (hotel.guests || [])
-          .filter((g) => g.isFilled || g.guestName) // Hanya kirim guest yang terisi
+          .filter((g) => g.isFilled || g.guestName)
           .map((g) => ({
             roomNumber: g.roomNumber,
-            // Mengambil nilai "Bed A" / "Bed B" saja (membuang teks tambahan seperti "(Twin Bed)")
             bedSlot: g.bedSlot.split(' ')[0] + ' ' + (g.bedSlot.split(' ')[1] || 'A'),
             category: g.category || 'INTERNAL',
             userId: g.userId || null,
@@ -375,6 +383,8 @@ export const useOrderStore = defineStore('order', () => {
     activeTransport,
     isTransportAdded,
     isSubmitting,
+    draftCode,
+    lastSavedTime,
     existingOrders,
     isLoading,
     errorMessage,

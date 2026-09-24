@@ -15,8 +15,8 @@ onMounted(() => {
   userStore.fetchUsers()
 })
 
-// Metrics Computation
-const totalUsersCount = computed(() => userStore.users.length)
+// Metrics Computation (Mendukung data terpaginasi)
+const totalUsersCount = computed(() => userStore.meta?.total || userStore.users.length)
 const activeUsersCount = computed(() => userStore.users.filter((u) => u.status === 'active').length)
 const superAdminCount = computed(
   () => userStore.users.filter((u) => u.role === 'SUPER_ADMIN').length,
@@ -84,7 +84,7 @@ async function handleSaveUser() {
     if (modalMode.value === 'create') {
       await userStore.addUser(formData.value)
     } else {
-      // 🔴 Bersihkan properti password jika kosong agar tidak memicu error validasi min(6) di Zod backend
+      // 🟢 Bersihkan properti password jika kosong agar tidak memicu error validasi min(6) di Zod backend
       const payload: Partial<UserDTO> = { ...formData.value }
       if (!payload.password) {
         delete payload.password
@@ -94,6 +94,16 @@ async function handleSaveUser() {
     isModalOpen.value = false
   } catch (err: any) {
     formError.value = String(err)
+  }
+}
+
+// 🟢 Handler Paginasi
+function handlePageChange(newPage: number) {
+  if (typeof userStore.setPage === 'function') {
+    userStore.setPage(newPage)
+  } else {
+    userStore.currentPage = newPage
+    userStore.fetchUsers()
   }
 }
 </script>
@@ -123,7 +133,7 @@ async function handleSaveUser() {
         <button
           type="button"
           @click="userStore.fetchUsers()"
-          class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 bg-surfaceCard hover:bg-surfaceCanvas text-textPrimary text-xs font-semibold shadow-2xs transition-colors"
+          class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 bg-surfaceCard hover:bg-surfaceCanvas text-textPrimary text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
         >
           <span class="material-symbols-outlined text-[18px]">refresh</span>
           <span>Refresh Data</span>
@@ -132,7 +142,7 @@ async function handleSaveUser() {
         <button
           type="button"
           @click="openCreateModal"
-          class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-bold shadow-sm transition-all active:scale-[0.99]"
+          class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-bold shadow-sm transition-all active:scale-[0.99] cursor-pointer"
         >
           <span class="material-symbols-outlined text-[18px]">person_add</span>
           <span>Tambah Pengguna Baru</span>
@@ -155,12 +165,14 @@ async function handleSaveUser() {
       @filter-change="userStore.fetchUsers()"
     />
 
-    <!-- 3. Data Table -->
+    <!-- 3. Data Table (Sudah Terhubung ke Meta & Event Change Page) -->
     <UserTable
       :users="userStore.users"
       :loading="userStore.loading"
+      :meta="userStore.meta"
       @edit="openEditModal"
       @toggle-status="userStore.toggleStatus"
+      @change-page="handlePageChange"
     />
 
     <!-- 4. Form Modal Component -->

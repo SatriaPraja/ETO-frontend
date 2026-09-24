@@ -1,15 +1,15 @@
 import api from './api'
 import type { ApiResponse } from '@/models/authModel'
-import type { UserItem, UserDTO } from '@/models/userModel'
+import type { UserItem, UserDTO, GetUsersQuery, UserPaginatedResponse } from '@/models/userModel'
 
 export const UserService = {
-  // 1. Fetch daftar user
-  async getUsers(params?: { search?: string; role?: string }): Promise<ApiResponse<UserItem[]>> {
-    const response = await api.get<ApiResponse<UserItem[]>>('/users', { params })
+  // 1. Fetch daftar user (Sudah mendukung page & limit)
+  async getUsers(params?: GetUsersQuery): Promise<UserPaginatedResponse<UserItem[]>> {
+    const response = await api.get<UserPaginatedResponse<UserItem[]>>('/users', { params })
     return response.data
   },
 
-  // 2. Create User (Ubah URL dari '/auth/register' menjadi '/users')
+  // 2. Create User
   async createUser(payload: UserDTO): Promise<ApiResponse<UserItem>> {
     const response = await api.post<ApiResponse<UserItem>>('/users', payload)
     return response.data
