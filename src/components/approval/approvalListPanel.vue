@@ -1,92 +1,25 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onMounted, watch } from 'vue'
+import { useApprovalStore } from '@/stores/approvalStore'
 
-const activeTab = ref('pending')
-const selectedId = ref('TO/2026/05/00187')
+const approvalStore = useApprovalStore()
 
-const emit = defineEmits(['select-item'])
+onMounted(() => {
+  approvalStore.fetchInbox()
+})
 
-interface ApprovalItem {
-  id: string
-  title: string
-  submitter: string
-  unit: string
-  timeAgo: string
-  typeIcon: string
-  typeColor: string
-  travelerCount: string
-  amount: string
-  statusText: string
-  isActive?: boolean
-}
+// Refetch jika tab berubah
+watch(() => approvalStore.activeTab, () => {
+  approvalStore.fetchInbox()
+})
 
-const items: ApprovalItem[] = [
-  {
-    id: 'TO/2026/05/00187',
-    title: 'Sosialisasi Program JKP Wilayah Jatim',
-    submitter: 'Andi Pratama',
-    unit: 'Wilayah Jawa Timur',
-    timeAgo: '30 mnt lalu',
-    typeIcon: 'flight',
-    typeColor: 'bg-sky-500',
-    travelerCount: '3 Karyawan',
-    amount: 'Rp 8.450.000',
-    statusText: 'Sedang Ditinjau ➔',
-    isActive: true,
-  },
-  {
-    id: 'TO/2026/05/00186',
-    title: 'Audit Kepatuhan Iuran Badan Usaha Skala...',
-    submitter: 'Budi Santoso',
-    unit: 'Cabang Surabaya',
-    timeAgo: '2 jam lalu',
-    typeIcon: 'train',
-    typeColor: 'bg-orange-500',
-    travelerCount: '2 Karyawan',
-    amount: 'Rp 3.120.000',
-    statusText: '›',
-  },
-  {
-    id: 'TO/2026/05/00185',
-    title: 'Rakor Nasional Pelayanan Klaim Terpadu',
-    submitter: 'Dewi Anggraini',
-    unit: 'Wilayah Jawa Timur',
-    timeAgo: '4 jam lalu',
-    typeIcon: 'flight',
-    typeColor: 'bg-sky-500',
-    travelerCount: '4 Karyawan',
-    amount: 'Rp 14.800.000',
-    statusText: '›',
-  },
-  {
-    id: 'TO/2026/05/00182',
-    title: 'Penyerahan Santunan JKK & JKM Simbolis',
-    submitter: 'Faisal Basri',
-    unit: 'KCP Malang',
-    timeAgo: 'Kemarin',
-    typeIcon: 'directions_car',
-    typeColor: 'bg-emerald-600',
-    travelerCount: '2 Karyawan',
-    amount: 'Rp 1.450.000',
-    statusText: '›',
-  },
-  {
-    id: 'TO/2026/05/00179',
-    title: 'Inspeksi K3 Kawasan Industri Gresik',
-    submitter: 'Hendra Wijaya',
-    unit: 'Cabang Gresik',
-    timeAgo: 'Kemarin',
-    typeIcon: 'directions_bus',
-    typeColor: 'bg-red-800',
-    travelerCount: '3 Karyawan',
-    amount: 'Rp 2.100.000',
-    statusText: '›',
-  },
-]
-
-function selectCard(item: ApprovalItem) {
-  selectedId.value = item.id
-  emit('select-item', item)
+// Debounce sederhana untuk pencarian
+let searchTimeout: any = null
+function handleSearchInput() {
+  clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => {
+    approvalStore.fetchInbox()
+  }, 400)
 }
 </script>
 
@@ -96,6 +29,8 @@ function selectCard(item: ApprovalItem) {
     <div class="relative">
       <span class="material-symbols-outlined absolute left-3 top-2.5 text-textMuted text-[18px]">search</span>
       <input
+        v-model="approvalStore.searchQuery"
+        @input="handleSearchInput"
         type="text"
         placeholder="Cari No. TO, kegiatan, atau nama booker..."
         class="w-full h-9 pl-9 pr-3 rounded-xl bg-surfaceCard border border-gray-100 text-xs text-textPrimary focus:outline-none focus:border-primary shadow-2xs"
@@ -106,42 +41,56 @@ function selectCard(item: ApprovalItem) {
     <div class="flex items-center gap-2 text-xs">
       <button
         type="button"
-        @click="activeTab = 'pending'"
+        @click="approvalStore.activeTab = 'pending'"
         :class="[
-          'px-3.5 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5',
-          activeTab === 'pending'
+          'px-3.5 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 cursor-pointer',
+          approvalStore.activeTab === 'pending'
             ? 'bg-surfaceCard text-textPrimary border border-gray-100 shadow-2xs'
             : 'text-textMuted hover:bg-surfaceCanvas'
         ]"
       >
         <span>Belum Diproses</span>
-        <span class="px-1.5 py-0.2 rounded-full bg-blue-600 text-white text-[10px]">5</span>
+        <span class="px-1.5 py-0.2 rounded-full bg-blue-600 text-white text-[10px]">
+          {{ approvalStore.counts.pending }}
+        </span>
       </button>
 
       <button
         type="button"
-        @click="activeTab = 'history'"
+        @click="approvalStore.activeTab = 'history'"
         :class="[
-          'px-3.5 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5',
-          activeTab === 'history'
+          'px-3.5 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 cursor-pointer',
+          approvalStore.activeTab === 'history'
             ? 'bg-surfaceCard text-textPrimary border border-gray-100 shadow-2xs'
             : 'text-textMuted hover:bg-surfaceCanvas'
         ]"
       >
         <span>Riwayat Persetujuan</span>
-        <span class="px-1.5 py-0.2 rounded-full bg-surfaceCanvas text-textMuted text-[10px]">38</span>
+        <span class="px-1.5 py-0.2 rounded-full bg-surfaceCanvas text-textMuted text-[10px]">
+          {{ approvalStore.counts.history }}
+        </span>
       </button>
     </div>
 
-    <!-- List Item Cards -->
-    <div class="space-y-2">
+    <!-- Loading State -->
+    <div v-if="approvalStore.isLoading" class="p-8 text-center text-xs text-textMuted">
+      Memuat daftar pengajuan...
+    </div>
+
+    <!-- Empty State -->
+    <div v-else-if="approvalStore.items.length === 0" class="p-8 text-center text-xs text-textMuted bg-surfaceCard rounded-xl border border-gray-100">
+      Tidak ada pengajuan ditemukan.
+    </div>
+
+    <!-- List Item Cards (Real Data) -->
+    <div v-else class="space-y-2">
       <div
-        v-for="item in items"
+        v-for="item in approvalStore.items"
         :key="item.id"
-        @click="selectCard(item)"
+        @click="approvalStore.selectItem(item)"
         :class="[
           'p-4 rounded-xl border transition-all cursor-pointer font-body space-y-2.5',
-          selectedId === item.id
+          approvalStore.selectedItem?.id === item.id
             ? 'bg-emerald-50/50 border-emerald-500 shadow-sm ring-1 ring-emerald-500'
             : 'bg-surfaceCard border-gray-100 hover:border-gray-200 shadow-2xs'
         ]"
@@ -179,7 +128,7 @@ function selectCard(item: ApprovalItem) {
 
           <div class="text-right">
             <strong class="font-extrabold text-textPrimary font-headline text-xs block">{{ item.amount }}</strong>
-            <span :class="['text-[10px] font-bold block', selectedId === item.id ? 'text-primary' : 'text-textMuted']">
+            <span :class="['text-[10px] font-bold block', approvalStore.selectedItem?.id === item.id ? 'text-primary' : 'text-textMuted']">
               {{ item.statusText }}
             </span>
           </div>

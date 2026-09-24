@@ -6,7 +6,23 @@ const props = defineProps<{
   detail: TravelOrderDetail
 }>()
 
-// Helper format tanggal dan waktu (contoh: 15 Mei 2026, 09:30 WIB)
+const slaProgressPercentage = computed(() => {
+  const baseDateStr = props.detail?.createdAt || props.detail?.orderDate
+  if (!baseDateStr) return 0
+
+  const createdAt = new Date(baseDateStr).getTime()
+  const now = Date.now()
+  const totalSlaMs = 3 * 24 * 60 * 60 * 1000 // 3 Hari dalam Milliseconds (72 Jam)
+
+  const elapsedMs = now - createdAt
+  if (elapsedMs <= 0) return 5 // Minimal 5% agar indikator garis tetap terlihat
+
+  const percentage = Math.round((elapsedMs / totalSlaMs) * 100)
+
+  // Batasi nilai persentase di rentang 5% hingga 100%
+  return Math.min(Math.max(percentage, 5), 100)
+})
+// Helper format tanggal dan waktu
 function formatDateTime(dateStr?: string) {
   if (!dateStr) return '-'
   return new Date(dateStr).toLocaleDateString('id-ID', {
@@ -18,15 +34,32 @@ function formatDateTime(dateStr?: string) {
   })
 }
 
-// 🟢 Logic Kalkulasi Dinamis: H+3 dari tanggal pengajuan
+// 🟢 Logic Status per Tahapan Stepper
+const currentStatus = computed(() => props.detail?.status || 'WAITING_PEJABAT')
+
+// Step 2: Pejabat Penyetuju
+const isPejabatDone = computed(() =>
+  ['WAITING_ADMINTRAVEL', 'APPROVED'].includes(currentStatus.value),
+)
+const isPejabatPending = computed(() => currentStatus.value === 'WAITING_PEJABAT')
+
+// Step 3: Admin Travel Pusat
+const isAdminTravelDone = computed(() => currentStatus.value === 'APPROVED')
+const isAdminTravelPending = computed(() => currentStatus.value === 'WAITING_ADMINTRAVEL')
+
+// Cari Log Aksi jika ada
+const pejabatLog = computed(() =>
+  props.detail?.approvalLogs?.find(
+    (l: any) => l.action === 'APPROVED' || l.action === 'RETURNED' || l.action === 'REJECTED',
+  ),
+)
+
+// SLA H+3 Dinamis
 const deadlineDateFormatted = computed(() => {
   const baseDateStr = props.detail?.createdAt || props.detail?.orderDate
   if (!baseDateStr) return '-'
-
   const baseDate = new Date(baseDateStr)
-  // Tambahkan 3 hari
   baseDate.setDate(baseDate.getDate() + 3)
-
   return formatDateTime(baseDate.toISOString())
 })
 </script>
@@ -69,15 +102,20 @@ const deadlineDateFormatted = computed(() => {
           <span class="text-[10px] text-textMuted block"
             >{{ formatDateTime(detail.createdAt) }} WIB</span
           >
-          <p class="text-[11px] text-textMuted pt-1 italic">
-            Pengajuan travel order dan booking jadwal tiket resmi direkam ke sistem e-TO.
-          </p>
         </div>
       </div>
 
-      <!-- STEP 2: Menunggu Persetujuan Pejabat (PROSES - MUTAR BERPUTAR) -->
+      <!-- STEP 2: Persetujuan Pejabat / Kakanwil -->
       <div class="relative flex items-start justify-between gap-3 text-xs">
+        <!-- Icon Dinamis (Centang Hijau jika Selesai, Mutar Biru jika Proses) -->
+        <span
+          v-if="isPejabatDone"
+          class="absolute -left-7 top-0.5 w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[12px] font-bold shadow-2xs"
+        >
+          ✓
+        </span>
         <div
+          v-else-if="isPejabatPending"
           class="absolute -left-7 top-0.5 w-6 h-6 rounded-full bg-blue-100 p-0.5 flex items-center justify-center shadow-2xs"
         >
           <div
@@ -86,13 +124,30 @@ const deadlineDateFormatted = computed(() => {
             <span class="material-symbols-outlined text-[15px] animate-spin">sync</span>
           </div>
         </div>
+        <span
+          v-else
+          class="absolute -left-7 top-0.5 w-6 h-6 rounded-full bg-gray-100 border border-gray-200 text-textMuted flex items-center justify-center text-[11px] font-bold"
+        >
+          2
+        </span>
 
-        <div class="space-y-1.5 flex-1">
+        <div
+          class="space-y-1 flex-1"
+          :class="{ 'opacity-50': !isPejabatDone && !isPejabatPending }"
+        >
           <div class="flex items-center justify-between">
-            <strong class="text-textPrimary font-bold text-xs leading-snug">
-              Menunggu Persetujuan<br />Pejabat
-            </strong>
-            <span class="text-blue-600 text-[11px] font-bold">Proses</span>
+            <strong class="text-textPrimary font-bold text-xs leading-snug"
+              >Persetujuan Pejabat / Kakanwil</strong
+            >
+            <span
+              v-if="isPejabatDone"
+              class="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 text-[10px] font-bold"
+              >Disetujui</span
+            >
+            <span v-else-if="isPejabatPending" class="text-blue-600 text-[11px] font-bold"
+              >Proses</span
+            >
+            <span v-else class="text-[10px] text-textMuted">Menunggu</span>
           </div>
 
           <div>
@@ -103,20 +158,25 @@ const deadlineDateFormatted = computed(() => {
           </div>
 
           <!-- Card Informasi SLA & Tenggat Dinamis H+3 -->
-          <div class="mt-2.5 p-3 rounded-xl bg-blue-50/60 border border-blue-100 space-y-2">
+          <div
+            v-if="isPejabatPending"
+            class="mt-2.5 p-3 rounded-xl bg-blue-50/60 border border-blue-100 space-y-2"
+          >
             <div class="flex items-center justify-between text-[11px]">
               <span class="text-textMuted font-medium">SLA Persetujuan:</span>
               <strong class="text-blue-700 font-bold">&lt; 3 Hari Kerja (H+3)</strong>
             </div>
 
-            <!-- Progress Bar Animation -->
+            <!-- 🟢 Progres Bar Dinamis Berdasarkan Sisa Waktu SLA -->
             <div class="w-full h-1.5 bg-blue-200/60 rounded-full overflow-hidden">
-              <div class="h-full bg-blue-600 rounded-full w-2/5 animate-pulse"></div>
+              <div
+                class="h-full bg-blue-600 rounded-full transition-all duration-500 ease-out"
+                :style="{ width: `${slaProgressPercentage}%` }"
+              ></div>
             </div>
 
-            <div class="text-[11px] text-textMuted pt-0.5">
+            <div class="flex items-center justify-between text-[11px] text-textMuted pt-0.5">
               <span>Tenggat Otorisasi: </span>
-              <!-- 🟢 Menggunakan Nilai Kalkulasi H+3 Dinamis -->
               <strong class="text-textPrimary font-bold">{{ deadlineDateFormatted }} WIB</strong>
             </div>
           </div>
@@ -124,37 +184,78 @@ const deadlineDateFormatted = computed(() => {
       </div>
 
       <!-- STEP 3: Verifikasi Admin Travel Pusat -->
-      <div class="relative flex items-start justify-between gap-3 text-xs opacity-50">
+      <div class="relative flex items-start justify-between gap-3 text-xs">
         <span
+          v-if="isAdminTravelDone"
+          class="absolute -left-7 top-0.5 w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[12px] font-bold shadow-2xs"
+        >
+          ✓
+        </span>
+        <div
+          v-else-if="isAdminTravelPending"
+          class="absolute -left-7 top-0.5 w-6 h-6 rounded-full bg-blue-100 p-0.5 flex items-center justify-center shadow-2xs"
+        >
+          <div
+            class="w-full h-full rounded-full bg-blue-600 text-white flex items-center justify-center"
+          >
+            <span class="material-symbols-outlined text-[15px] animate-spin">sync</span>
+          </div>
+        </div>
+        <span
+          v-else
           class="absolute -left-7 top-0.5 w-6 h-6 rounded-full bg-gray-100 border border-gray-200 text-textMuted flex items-center justify-center text-[11px] font-bold"
         >
           3
         </span>
-        <div class="space-y-0.5 flex-1">
+
+        <div
+          class="space-y-0.5 flex-1"
+          :class="{ 'opacity-50': !isAdminTravelDone && !isAdminTravelPending }"
+        >
           <div class="flex items-center justify-between">
             <strong class="text-textPrimary font-bold text-xs"
               >Verifikasi Admin Travel Pusat</strong
             >
-            <span class="text-[10px] text-textMuted">Menunggu</span>
+            <span
+              v-if="isAdminTravelDone"
+              class="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 text-[10px] font-bold"
+              >Disetujui</span
+            >
+            <span v-else-if="isAdminTravelPending" class="text-blue-600 text-[11px] font-bold"
+              >Proses</span
+            >
+            <span v-else class="text-[10px] text-textMuted">Menunggu</span>
           </div>
           <p class="text-textMuted text-[11px]">Tim Administrasi Umum Kantor Pusat</p>
-          <p class="text-[10px] text-textMuted">Validasi kesesuaian plafon biaya BUMN</p>
         </div>
       </div>
 
-      <!-- STEP 4: Penerbitan e-TO & Tiket/Voucher -->
-      <div class="relative flex items-start justify-between gap-3 text-xs opacity-50">
+      <!-- STEP 4: Penerbitan e-TO & Tiket/Voucher (Final Status APPROVED) -->
+      <div class="relative flex items-start justify-between gap-3 text-xs">
         <span
+          v-if="currentStatus === 'APPROVED'"
+          class="absolute -left-7 top-0.5 w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[12px] font-bold shadow-2xs"
+        >
+          ✓
+        </span>
+        <span
+          v-else
           class="absolute -left-7 top-0.5 w-6 h-6 rounded-full bg-gray-100 border border-gray-200 text-textMuted flex items-center justify-center text-[11px] font-bold"
         >
           4
         </span>
-        <div class="space-y-0.5 flex-1">
+
+        <div class="space-y-0.5 flex-1" :class="{ 'opacity-50': currentStatus !== 'APPROVED' }">
           <div class="flex items-center justify-between">
             <strong class="text-textPrimary font-bold text-xs"
               >Penerbitan e-TO & Tiket/Voucher</strong
             >
-            <span class="text-[10px] text-textMuted">Tahap Akhir</span>
+            <span
+              v-if="currentStatus === 'APPROVED'"
+              class="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 text-[10px] font-bold"
+              >Selesai</span
+            >
+            <span v-else class="text-[10px] text-textMuted">Tahap Akhir</span>
           </div>
           <p class="text-textMuted text-[11px]">Sistem Integrasi Garuda & Santika Group</p>
         </div>

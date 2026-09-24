@@ -1,9 +1,5 @@
-export type HistoryOrderStatus = 
-  | 'WAITING_PEJABAT' 
-  | 'APPROVED' 
-  | 'REJECTED' 
-  | 'RETURNED' 
-  | 'CANCELLED'
+export type HistoryOrderStatus =
+  'WAITING_PEJABAT' | 'WAITING_ADMINTRAVEL' | 'APPROVED' | 'REJECTED' | 'RETURNED' | 'CANCELLED'
 
 export interface HistoryOrderItem {
   id: string

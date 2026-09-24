@@ -27,7 +27,7 @@ const router = createRouter({
         {
           path: 'create-order',
           name: 'create-order',
-          component: () => import('../views/travel/createOrderView.vue'),
+          component: () => import('../views/order/createOrderView.vue'),
         },
         {
           path: 'history',
@@ -41,11 +41,11 @@ const router = createRouter({
           name: 'order-detail',
           component: () => import('../views/history/[toCode].vue'), // atau orderDetailView.vue jika file sudah di-rename
         },
-        // {
-        //   path: 'history/edit-order/:toCode',
-        //   name: 'edit-order',
-        //   component: () => import('../views/history/orderEditView.vue'),
-        // },
+        {
+          path: 'history/edit-order/:toCode',
+          name: 'edit-order',
+          component: () => import('../views/history/orderEditView.vue'),
+        },
         {
           path: 'history/print-pdf/:toCode',
           name: 'print-pdf',
