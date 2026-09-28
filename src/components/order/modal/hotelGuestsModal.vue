@@ -1,13 +1,20 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
 import { useOrderStore, type HotelItem, type HotelGuestItem } from '@/stores/orderStore'
+import { useTravelOrderEditStore } from '@/stores/travelOrderEditStore'
 import SelectOfficialBookerModal, {
   type OfficialBookerItem,
 } from '@/components/order/modal/selectOfficialBookerModal.vue'
 
+// Extend tipe HotelGuestItem agar mendukung properti internal UI (isFilled)
+interface LocalHotelGuestItem extends HotelGuestItem {
+  isFilled?: boolean
+}
+
 const props = defineProps<{
   isOpen: boolean
   hotelItem?: HotelItem | null
+  isEditMode?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -15,7 +22,9 @@ const emit = defineEmits<{
   (e: 'save', guests: HotelGuestItem[]): void
 }>()
 
+// Store Instantiation
 const orderStore = useOrderStore()
+const editStore = useTravelOrderEditStore() // Memperbaiki error 'editStore is not defined'
 
 // State Modal LOV Pegawai
 const isBookerModalOpen = ref(false)
@@ -31,7 +40,7 @@ const formGuest = ref({
   selectedSlotId: '',
 })
 
-const guestsList = ref<HotelGuestItem[]>([])
+const guestsList = ref<LocalHotelGuestItem[]>([])
 
 // Reset form saat kategori penginap berubah
 watch(
@@ -50,27 +59,39 @@ function initializeSlots() {
   if (!props.hotelItem) return
 
   const totalSlotsNeeded = (props.hotelItem.roomCount || 1) * 2
-  const existingGuests = props.hotelItem.guests || []
+  const existingGuests = Array.isArray(props.hotelItem.guests) ? props.hotelItem.guests : []
 
-  const generatedSlots: HotelGuestItem[] = []
+  const generatedSlots: LocalHotelGuestItem[] = []
 
   for (let i = 0; i < totalSlotsNeeded; i++) {
     const roomNum = Math.floor(i / 2) + 1
     const bedLetter = i % 2 === 0 ? 'A' : 'B'
     const slotId = `R${roomNum}-B${bedLetter}`
 
-    const existing = existingGuests.find(
-      (g) =>
-        g.id === slotId ||
-        (g.roomNumber === `Kamar 0${roomNum}` && g.bedSlot.includes(`Bed ${bedLetter}`)),
-    )
+    // Cari guest berdasarkan urutan indeks atau pencocokan nomor kamar/bed
+    const existing =
+      existingGuests[i] ||
+      existingGuests.find(
+        (g: any) =>
+          g.id === slotId ||
+          (g.roomNumber === `Kamar 0${roomNum}` && g.bedSlot?.includes(`Bed ${bedLetter}`)),
+      )
 
-    if (existing && existing.guestName) {
+    if (existing && (existing.guestName || (existing as any).guest_name)) {
+      const gName = existing.guestName || (existing as any).guest_name || ''
+      const gNpk = existing.npkOrKtp || (existing as any).npk_or_ktp || '-'
+      const gJabatan = existing.jabatanOrInstansi || (existing as any).jabatan_or_instansi || '-'
+
       generatedSlots.push({
         ...existing,
-        id: slotId,
+        id: existing.id || slotId,
         roomNumber: `Kamar 0${roomNum}`,
         bedSlot: `Bed ${bedLetter} (Twin Bed)`,
+        guestName: gName,
+        npkOrKtp: gNpk,
+        jabatanOrInstansi: gJabatan,
+        category: existing.category || 'INTERNAL',
+        phone: existing.phone || '-',
         isFilled: true,
       })
     } else {
@@ -137,8 +158,8 @@ function handleAddGuest() {
     guestsList.value[targetIndex] = {
       id: current!.id,
       roomNumber: current!.roomNumber,
-      bedSlot: current!.bedSlot.replace('(Kosong)', '(Terisi)'),
-      userId: formGuest.value.userId || null,
+      bedSlot: current!.bedSlot?.replace('(Kosong)', '(Terisi)') || '',
+      userId: formGuest.value.userId || undefined,
       guestName: formGuest.value.name,
       npkOrKtp: formGuest.value.npk
         ? formGuest.value.category === 'INTERNAL'
@@ -179,7 +200,7 @@ function handleRemoveGuest(id?: string) {
       roomNumber: current!.roomNumber,
       bedSlot: `Bed ${bedLetter} (Kosong)`,
       category: 'INTERNAL',
-      userId: null,
+      userId: undefined,
       guestName: '',
       npkOrKtp: '',
       jabatanOrInstansi: '',
@@ -190,14 +211,31 @@ function handleRemoveGuest(id?: string) {
 }
 
 function handleSave() {
-  if (props.hotelItem?.id) {
-    orderStore.updateHotelGuests(props.hotelItem.id, guestsList.value)
+  // Bersihkan properti internal `isFilled` sebelum disimpan ke store
+  const filledGuests: HotelGuestItem[] = guestsList.value
+    .filter((g) => g.isFilled)
+    .map(({ isFilled, ...rest }) => rest)
+
+  if (props.hotelItem) {
+    // 1. Jika dalam Mode Edit (Koreksi)
+    if (props.isEditMode || editStore.hotels.length > 0) {
+      const targetHotel = editStore.hotels.find(
+        (h) => h === props.hotelItem || h.id === props.hotelItem?.id,
+      )
+      if (targetHotel) {
+        targetHotel.guests = filledGuests
+      }
+    }
+    // 2. Jika dalam Mode Tambah Baru
+    else if (props.hotelItem.id) {
+      orderStore.updateHotelGuests(props.hotelItem.id, filledGuests)
+    }
   }
-  emit('save', guestsList.value)
+
+  emit('save', filledGuests)
   emit('close')
 }
 </script>
-
 <template>
   <div
     v-if="isOpen"
