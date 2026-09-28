@@ -25,22 +25,12 @@ export const useTravelOrderEditStore = defineStore('travelOrderEdit', () => {
   const notes = ref<string>('')
   const approverId = ref<string>('')
   const approverNama = ref<string>('')
-  const approvalLogs = ref<any[]>([])
 
   const transports = ref<EditTransportItem[]>([])
   const hotels = ref<EditHotelItem[]>([])
 
   const isLoading = ref<boolean>(false)
   const isSubmitting = ref<boolean>(false)
-
-  const orderDateFormatted = computed(() => {
-    if (!orderDate.value) return '-'
-    return new Date(orderDate.value).toLocaleDateString('id-ID', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    })
-  })
 
   const totalTransportCost = computed(() => {
     return transports.value.reduce((sum, item) => sum + Number(item.estimatedPrice || 0), 0)
@@ -59,34 +49,64 @@ export const useTravelOrderEditStore = defineStore('travelOrderEdit', () => {
     return d.toISOString().split('T')[0] || ''
   }
 
+  // 🟢 Memetakan Data Response API Backend secara presisi
   function setFormData(data: any) {
-    travelOrderId.value = data.id || data.travelOrderId || ''
-    existingToOption.value = data.existingToOption || data.toCode || data.to_code || ''
-    toCode.value = data.toCode || data.to_code || ''
-    orderDate.value = formatDateForInput(data.orderDate || data.created_at || data.createdAt)
-    sprinNumber.value = data.sprinNumber || data.sprin_number || ''
-    activityName.value = data.activityName || data.activity_name || data.title || ''
-    unitKerjaKode.value = data.unitKerjaKode || data.unit_kerja_kode || ''
-    unitKerjaNama.value = data.unitKerjaNama || data.unit_kerja_nama || data.unitKerja || ''
-    programKerja.value = data.programKerja || data.program_kerja || data.programName || ''
-    budgetId.value = data.budgetId || data.budget_id || ''
-    budgetAccountNumber.value = data.budgetAccountNumber || data.account_number || ''
-    budgetAccountName.value = data.budgetAccountName || data.account_name || ''
-    remainingBudget.value = Number(data.remainingBudget || data.pagu_budget || 0)
-    sprinDetail.value = data.sprinDetail || data.sprin_detail || ''
-    notes.value = '' // Booker notes diisi baru
-    approverId.value = data.approverId || data.approver_id || ''
-    approverNama.value = data.approverNama || data.approver_nama || data.approverName || ''
-    approvalLogs.value = data.approvalLogs || data.approval_logs || []
+    if (!data) return
 
-    transports.value = data.transports ? [...data.transports] : []
-    hotels.value = data.hotels ? [...data.hotels] : []
+    travelOrderId.value = data.id || ''
+    existingToOption.value = data.toCode || ''
+    toCode.value = data.toCode || ''
+    orderDate.value = formatDateForInput(data.orderDate || data.createdAt)
+    sprinNumber.value = data.sprinNumber || ''
+    activityName.value = data.activityName || ''
+    unitKerjaKode.value = data.unitKerjaKode || ''
+    unitKerjaNama.value = data.unitKerjaNama || ''
+    programKerja.value = data.programKerja || ''
+    budgetId.value = data.budgetId || ''
+    budgetAccountNumber.value = data.budgetAccountNumber || ''
+    budgetAccountName.value = data.budgetAccountName || ''
+    remainingBudget.value = Number(data.remainingBudget || 0)
+    sprinDetail.value = data.sprinDetail || ''
+    notes.value = data.notes || ''
+    approverId.value = data.approverId || ''
+    approverNama.value = data.approverNama || ''
+
+    transports.value = Array.isArray(data.transports)
+      ? data.transports.map((t: any) => ({
+          ...t,
+          estimatedPrice: Number(t.estimatedPrice || 0),
+        }))
+      : []
+
+    hotels.value = Array.isArray(data.hotels)
+      ? data.hotels.map((h: any) => ({
+          ...h,
+          pricePerNight: Number(h.pricePerNight || 0),
+          subtotalPrice: Number(h.subtotalPrice || 0),
+          guests: Array.isArray(h.guests) ? h.guests : [],
+        }))
+      : []
+  }
+  async function fetchCorrectionData(identifier: string) {
+    isLoading.value = true
+    try {
+      const response = await travelOrderEditService.getOrderForCorrection(identifier)
+      if (response && response.data) {
+        setFormData(response.data)
+      }
+    } catch (error) {
+      console.error('Gagal mengambil data koreksi:', error)
+      throw error
+    } finally {
+      isLoading.value = false
+    }
   }
 
   async function submitRevision() {
     if (!travelOrderId.value) throw new Error('ID Travel Order tidak ditemukan.')
-    if (!notes.value.trim())
+    if (!notes.value.trim()) {
       throw new Error('Catatan penjelasan perbaikan (Booker Notes) wajib diisi.')
+    }
 
     isSubmitting.value = true
     try {
@@ -94,6 +114,7 @@ export const useTravelOrderEditStore = defineStore('travelOrderEdit', () => {
         travelOrderId: travelOrderId.value,
         sprinNumber: sprinNumber.value,
         activityName: activityName.value,
+        unitKerjaNama: unitKerjaNama.value,
         budgetId: budgetId.value,
         sprinDetail: sprinDetail.value,
         notes: notes.value,
@@ -125,16 +146,15 @@ export const useTravelOrderEditStore = defineStore('travelOrderEdit', () => {
     notes,
     approverId,
     approverNama,
-    approvalLogs,
     transports,
     hotels,
     isLoading,
     isSubmitting,
-    orderDateFormatted,
     totalTransportCost,
     totalHotelCost,
     grandTotalCost,
     setFormData,
+    fetchCorrectionData,
     submitRevision,
   }
 })
