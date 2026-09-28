@@ -1,26 +1,34 @@
 <script setup lang="ts">
-import TransportHeader from './transportHeader.vue'
-import TransportKpiCards from './transportKpiCards.vue'
-import TransportFilterSection from './transportFilterSection.vue'
-import TransportTable from './transportTable.vue'
-import TransportAnalyticsGrid from './transportAnalyticsGrid.vue'
+import { onMounted } from 'vue'
+import { useReportStore } from '@/stores/reportStore'
+import transportHeader from './transportHeader.vue'
+import transportKpiCards from './transportKpiCards.vue'
+import transportFilterSection from './transportFilterSection.vue'
+import transportAnalyticsGrid from './transportAnalyticsGrid.vue'
+import transportTable from './transportTable.vue'
+
+const reportStore = useReportStore()
+
+onMounted(() => {
+  reportStore.fetchTransportReport()
+})
 </script>
 
 <template>
-  <div class="space-y-6 pb-12 font-body w-full max-w-full overflow-x-hidden">
-    <!-- Breadcrumb & Main Header -->
-    <TransportHeader />
+  <div class="p-6 space-y-6 max-w-7xl mx-auto font-body bg-gray-50/30 min-h-screen">
+    <!-- Header Page -->
+    <transportHeader />
 
-    <!-- 4 Summary KPI Cards -->
-    <TransportKpiCards />
+    <!-- KPI Cards Overview -->
+    <transportKpiCards />
 
-    <!-- Filter Parameter Form -->
-    <TransportFilterSection />
+    <!-- Section Filter Parameter -->
+    <transportFilterSection />
 
-    <!-- Transport Log Data Table -->
-    <TransportTable />
+    <!-- Table Data Transaksi -->
+    <transportTable />
 
-    <!-- Bottom Analytics: Modality Composition, Top Corridors & BPK Compliance -->
-    <TransportAnalyticsGrid />
+    <!-- Analytics Composition & Corridors Grid -->
+    <transportAnalyticsGrid />
   </div>
 </template>
