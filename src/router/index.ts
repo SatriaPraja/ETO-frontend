@@ -88,6 +88,11 @@ const router = createRouter({
           component: () => import('../views/master/budgetCoaView.vue'),
         },
         {
+          path: 'master/cities-airports',
+          name: 'master-cities-airports',
+          component: () => import('../views/master/cityAirportView.vue'),
+        },
+        {
           path: 'users',
           name: 'users',
           component: () => import('../views/admin/userManagementView.vue'),

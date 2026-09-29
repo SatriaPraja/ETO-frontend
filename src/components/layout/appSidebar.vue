@@ -372,16 +372,28 @@ const showPendingBadge = computed(() => {
               <span>Maskapai & Vendor</span>
             </router-link>
 
-            <a
-              href="#"
-              class="flex items-center gap-3 px-3 py-2 rounded-xl text-textPrimary hover:bg-surfaceCanvas transition-colors"
+            <!-- Di bagian GROUP 4: ADMINISTRASI MASTER dalam Sidebar.vue -->
+            <router-link
+              v-if="hasAccess(['SUPER_ADMIN', 'ADMIN_TRAVEL_KP'])"
+              to="/master/cities-airports"
+              @click="$emit('close-sidebar')"
+              :class="[
+                'flex items-center gap-3 px-3 py-2 rounded-xl transition-colors',
+                route.path.startsWith('/master/cities-airports')
+                  ? 'bg-emerald-800 text-white font-bold shadow-2xs'
+                  : 'text-textPrimary hover:bg-surfaceCanvas',
+              ]"
             >
-              <span class="material-symbols-outlined text-textMuted text-[18px]"
-                >location_city</span
+              <span
+                class="material-symbols-outlined text-[18px]"
+                :class="
+                  route.path.startsWith('/master/cities-airports') ? 'text-white' : 'text-textMuted'
+                "
               >
+                location_city
+              </span>
               <span>Kota & Bandara</span>
-            </a>
-
+            </router-link>
             <router-link
               v-if="hasAccess(['SUPER_ADMIN', 'ASDEP_KEUANGAN'])"
               to="/master/budget"
