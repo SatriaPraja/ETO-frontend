@@ -1,3 +1,39 @@
+<script setup lang="ts">
+import { useVendorStore } from '@/stores/vendorStore'
+
+const vendorStore = useVendorStore()
+
+function getModaLabel(type: string) {
+  switch (type) {
+    case 'flight':
+      return 'Pesawat Udara'
+    case 'train':
+      return 'Kereta Api'
+    case 'sea':
+      return 'Kapal Laut'
+    case 'bus':
+      return 'Bus / Shuttle'
+    case 'car':
+      return 'Mobil Dinas'
+    default:
+      return type
+  }
+}
+
+function getModaColorBg(type: string) {
+  switch (type) {
+    case 'flight':
+      return 'bg-sky-500'
+    case 'train':
+      return 'bg-orange-500'
+    case 'sea':
+      return 'bg-blue-500'
+    default:
+      return 'bg-emerald-600'
+  }
+}
+</script>
+
 <template>
   <div class="grid grid-cols-1 md:grid-cols-3 gap-5 font-body">
     <!-- Card 1: Distribusi Moda Rekanan -->
@@ -8,38 +44,22 @@
       </h3>
 
       <div class="flex items-center gap-4 text-xs">
-        <!-- Donut Ring Mockup -->
+        <!-- Donut Ring Badge -->
         <div class="w-20 h-20 rounded-full border-8 border-sky-500 border-t-orange-500 border-r-blue-500 shrink-0 flex items-center justify-center font-bold text-textPrimary text-xs font-headline">
-          24 Total
+          {{ vendorStore.stats.totalVendor }} Total
         </div>
 
         <div class="space-y-1.5 flex-1">
-          <div class="flex items-center justify-between text-[11px]">
+          <div
+            v-for="dist in vendorStore.distributions"
+            :key="dist.transportType"
+            class="flex items-center justify-between text-[11px]"
+          >
             <span class="flex items-center gap-1.5">
-              <span class="w-2 h-2 rounded-full bg-sky-500"></span> Pesawat Udara
+              <span :class="['w-2 h-2 rounded-full', getModaColorBg(dist.transportType)]"></span>
+              {{ getModaLabel(dist.transportType) }}
             </span>
-            <strong class="font-headline">11 (46%)</strong>
-          </div>
-
-          <div class="flex items-center justify-between text-[11px]">
-            <span class="flex items-center gap-1.5">
-              <span class="w-2 h-2 rounded-full bg-orange-500"></span> Kereta Api
-            </span>
-            <strong class="font-headline">6 (25%)</strong>
-          </div>
-
-          <div class="flex items-center justify-between text-[11px]">
-            <span class="flex items-center gap-1.5">
-              <span class="w-2 h-2 rounded-full bg-blue-500"></span> Kapal Laut
-            </span>
-            <strong class="font-headline">4 (15%)</strong>
-          </div>
-
-          <div class="flex items-center justify-between text-[11px]">
-            <span class="flex items-center gap-1.5">
-              <span class="w-2 h-2 rounded-full bg-emerald-600"></span> Bus / Shuttle
-            </span>
-            <strong class="font-headline">3 (14%)</strong>
+            <strong class="font-headline">{{ dist.count }} ({{ dist.percentage }}%)</strong>
           </div>
         </div>
       </div>

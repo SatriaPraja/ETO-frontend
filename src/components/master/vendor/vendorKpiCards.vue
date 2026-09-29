@@ -1,3 +1,26 @@
+<script setup lang="ts">
+import { useVendorStore } from '@/stores/vendorStore'
+
+const vendorStore = useVendorStore()
+
+function getModaLabel(type?: string) {
+  switch (type) {
+    case 'flight':
+      return 'Pesawat'
+    case 'train':
+      return 'Kereta Api'
+    case 'sea':
+      return 'Kapal Laut'
+    case 'bus':
+      return 'Bus / Shuttle'
+    case 'car':
+      return 'Mobil Dinas'
+    default:
+      return 'Pesawat'
+  }
+}
+</script>
+
 <template>
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 font-body">
     <!-- Card 1: Total Maskapai/Vendor -->
@@ -5,7 +28,9 @@
       <div>
         <span class="text-[10px] font-bold text-textMuted uppercase tracking-wider block">TOTAL MASKAPAI/VENDOR</span>
         <div class="flex items-baseline gap-1 mt-1">
-          <span class="text-2xl font-extrabold text-textPrimary font-headline">24</span>
+          <span class="text-2xl font-extrabold text-textPrimary font-headline">
+            {{ vendorStore.stats.totalVendor }}
+          </span>
         </div>
         <span class="text-[10px] text-emerald-600 font-semibold block mt-1">~ 100% Terverifikasi</span>
       </div>
@@ -19,7 +44,9 @@
       <div>
         <span class="text-[10px] font-bold text-textMuted uppercase tracking-wider block">INTEGRASI API LIVE</span>
         <div class="flex items-baseline gap-1 mt-1">
-          <span class="text-2xl font-extrabold text-textPrimary font-headline">18</span>
+          <span class="text-2xl font-extrabold text-textPrimary font-headline">
+            {{ vendorStore.stats.apiLive }}
+          </span>
         </div>
         <span class="text-[10px] text-textMuted block mt-1">Tiket diterbitkan instan</span>
       </div>
@@ -33,7 +60,9 @@
       <div>
         <span class="text-[10px] font-bold text-textMuted uppercase tracking-wider block">MODA TERBANYAK</span>
         <div class="flex items-baseline gap-1 mt-1">
-          <span class="text-lg font-extrabold text-textPrimary font-headline">Pesawat (11)</span>
+          <span class="text-lg font-extrabold text-textPrimary font-headline">
+            {{ getModaLabel(vendorStore.stats.topModa?.type) }} ({{ vendorStore.stats.topModa?.count || 0 }})
+          </span>
         </div>
         <span class="text-[10px] text-textMuted block mt-1">Domestik & Regional</span>
       </div>
@@ -47,7 +76,9 @@
       <div>
         <span class="text-[10px] font-bold text-textMuted uppercase tracking-wider block">PERLU PEMBAHARUAN</span>
         <div class="flex items-baseline gap-1 mt-1">
-          <span class="text-2xl font-extrabold text-amber-600 font-headline">3</span>
+          <span class="text-2xl font-extrabold text-amber-600 font-headline">
+            {{ vendorStore.stats.perluPembaharuan }}
+          </span>
         </div>
         <span class="text-[10px] text-textMuted block mt-1">PKS & Kredensial API</span>
       </div>

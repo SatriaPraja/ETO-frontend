@@ -6,7 +6,12 @@ const router = useRouter()
 function goToCreate() {
   router.push('/master/vendors/create')
 }
+
+function handleExportData() {
+  alert('Mengunduh data master maskapai & vendor (.xlsx)...')
+}
 </script>
+
 <template>
   <div class="space-y-4 font-body">
     <!-- Breadcrumb -->
@@ -25,14 +30,14 @@ function goToCreate() {
           Master Maskapai & Rekanan Transportasi
         </h1>
         <p class="text-xs text-textMuted mt-1">
-          Kelola daftar mitra penyedia moda transportasi dinas, integrasi API, dan status aktif
-          pemesanan.
+          Kelola daftar mitra penyedia moda transportasi dinas, integrasi API, dan status aktif pemesanan.
         </p>
       </div>
 
       <div class="flex items-center gap-2 shrink-0">
         <button
           type="button"
+          @click="handleExportData"
           class="px-3.5 py-2 rounded-lg bg-surfaceCard border border-gray-200 hover:bg-surfaceCanvas text-textPrimary text-xs font-bold transition-colors inline-flex items-center gap-1.5 shadow-2xs cursor-pointer"
         >
           <span class="material-symbols-outlined text-[16px]">download</span>
