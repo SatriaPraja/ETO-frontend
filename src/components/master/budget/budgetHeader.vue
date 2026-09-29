@@ -1,3 +1,11 @@
+<script setup lang="ts">
+const emit = defineEmits(['open-modal'])
+
+function handleDownloadRekap() {
+  alert('Mengunduh Rekap Mata Anggaran & Alokasi Pagu (.xlsx)...')
+}
+</script>
+
 <template>
   <div class="space-y-4 font-body">
     <!-- Breadcrumb -->
@@ -16,7 +24,9 @@
           <h1 class="text-xl lg:text-2xl font-bold text-textPrimary font-headline">
             Pengelolaan Mata Anggaran & Alokasi Pagu (COA)
           </h1>
-          <span class="px-2.5 py-0.5 rounded bg-emerald-50 text-emerald-800 text-[11px] font-bold border border-emerald-200 flex items-center gap-1">
+          <span
+            class="px-2.5 py-0.5 rounded bg-emerald-50 text-emerald-800 text-[11px] font-bold border border-emerald-200 flex items-center gap-1"
+          >
             <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
             <span>TA 2026 Aktif</span>
           </span>
@@ -29,6 +39,7 @@
       <div class="flex items-center gap-2 shrink-0">
         <button
           type="button"
+          @click="handleDownloadRekap"
           class="px-3.5 py-2 rounded-lg bg-surfaceCard border border-gray-200 hover:bg-surfaceCanvas text-textPrimary text-xs font-bold transition-colors inline-flex items-center gap-1.5 shadow-2xs cursor-pointer"
         >
           <span class="material-symbols-outlined text-[16px]">download</span>
@@ -37,6 +48,7 @@
 
         <button
           type="button"
+          @click="emit('open-modal')"
           class="px-4 py-2 rounded-lg bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-bold inline-flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
         >
           <span class="material-symbols-outlined text-[18px]">add_circle</span>

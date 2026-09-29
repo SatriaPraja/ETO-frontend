@@ -1,3 +1,17 @@
+<script setup lang="ts">
+import { useBudgetStore } from '@/stores/budgetStore'
+
+const store = useBudgetStore()
+
+function formatCurrency(val: number): string {
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    maximumFractionDigits: 0,
+  }).format(val || 0)
+}
+</script>
+
 <template>
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 font-body">
     <!-- Card 1: Total Pagu DIPA 2026 -->
@@ -10,11 +24,11 @@
       </div>
       <div>
         <div class="text-xl font-extrabold text-textPrimary font-headline">
-          Rp 4.500.000.000
+          {{ formatCurrency(store.stats.totalPaguDipa) }}
         </div>
         <div class="flex items-center justify-between text-[10px] text-textMuted mt-1 pt-1 border-t border-gray-100">
-          <span>84 Akun COA</span>
-          <span>Terdaftar di 11 Unit Kerja</span>
+          <span>{{ store.stats.totalAkunCoa }} Akun COA</span>
+          <span>Terdaftar di {{ store.stats.totalUnitKerja }} Unit Kerja</span>
         </div>
       </div>
     </div>
@@ -29,11 +43,11 @@
       </div>
       <div>
         <div class="text-xl font-extrabold text-textPrimary font-headline">
-          Rp 1.845.200.000
+          {{ formatCurrency(store.stats.totalRealisasiIssued) }}
         </div>
         <div class="flex items-center justify-between text-[10px] mt-1 pt-1 border-t border-gray-100">
           <span class="text-textMuted">Serapan Anggaran</span>
-          <strong class="text-blue-600 font-bold">41.0%</strong>
+          <strong class="text-blue-600 font-bold">{{ store.stats.realisasiPercentage }}%</strong>
         </div>
       </div>
     </div>
@@ -48,11 +62,11 @@
       </div>
       <div>
         <div class="text-xl font-extrabold text-textPrimary font-headline">
-          Rp 215.000.000
+          {{ formatCurrency(store.stats.dalamProsesPersetujuan) }}
         </div>
         <div class="flex items-center justify-between text-[10px] mt-1 pt-1 border-t border-gray-100">
-          <span class="text-amber-800 font-bold">12 Pengajuan</span>
-          <span class="text-textMuted">Komitmen tertahan (4.8%)</span>
+          <span class="text-amber-800 font-bold">{{ store.stats.totalPengajuanCount }} Pengajuan</span>
+          <span class="text-textMuted">Komitmen tertahan ({{ store.stats.persetujuanPercentage }}%)</span>
         </div>
       </div>
     </div>
@@ -67,13 +81,13 @@
       </div>
       <div>
         <div class="text-xl font-extrabold text-emerald-700 font-headline">
-          Rp 2.439.800.000
+          {{ formatCurrency(store.stats.sisaSaldoPaguTersedia) }}
         </div>
         <div class="flex items-center justify-between text-[10px] mt-1 pt-1 border-t border-gray-100">
           <span class="text-emerald-700 font-bold flex items-center gap-1">
             <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span> Status Aman
           </span>
-          <strong class="text-emerald-700 font-bold">54.2%</strong>
+          <strong class="text-emerald-700 font-bold">{{ store.stats.sisaPercentage }}%</strong>
         </div>
       </div>
     </div>
