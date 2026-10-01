@@ -130,21 +130,26 @@ function handleGuestsSaved() {
 </script>
 
 <template>
-  <!-- Kartu Utama Sejajar seperti Section 1 -->
-  <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-2xs space-y-5 font-body">
+  <div
+    class="bg-white p-3.5 sm:p-6 rounded-2xl border border-gray-100 shadow-2xs space-y-4 sm:space-y-5 font-body"
+  >
     <!-- Header Section -->
-    <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+    <div
+      class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-100"
+    >
       <div>
-        <h2 class="text-base font-bold text-textPrimary font-headline flex items-center gap-2">
+        <h2
+          class="text-sm sm:text-base font-bold text-textPrimary font-headline flex items-center gap-2"
+        >
           <span class="material-symbols-outlined text-[#930049] text-[20px]">hotel</span>
-          2. Data Hotel & Detail Kamar
+          <span>2. Data Hotel & Detail Kamar</span>
           <span
-            class="px-2 py-0.5 rounded bg-[#930049] text-white text-[10px] font-bold uppercase tracking-wider"
+            class="px-2 py-0.5 rounded bg-[#930049] text-white text-[10px] font-bold uppercase tracking-wider shrink-0"
           >
             AKOMODASI
           </span>
         </h2>
-        <p class="text-xs text-textMuted mt-0.5">
+        <p class="text-[11px] sm:text-xs text-textMuted mt-0.5 leading-relaxed">
           Masukkan rincian reservasi akomodasi hotel dinas sesuai plafon jabatan
         </p>
       </div>
@@ -152,7 +157,7 @@ function handleGuestsSaved() {
       <button
         type="button"
         @click="isHotelModalOpen = true"
-        class="text-xs font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer"
+        class="text-xs font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer self-start sm:self-auto"
       >
         <span class="material-symbols-outlined text-[16px]">domain</span>
         <span>Lihat Hotel Rekanan BPJS</span>
@@ -160,10 +165,10 @@ function handleGuestsSaved() {
     </div>
 
     <!-- Form Input / Order Hotel -->
-    <div class="bg-surfaceCard p-4 rounded-xl border border-gray-100 shadow-2xs space-y-3">
+    <div class="bg-surfaceCard p-3.5 sm:p-4 rounded-xl border border-gray-100 shadow-2xs space-y-3">
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
         <!-- Nama Hotel -->
-        <div class="flex flex-col lg:col-span-2">
+        <div class="flex flex-col sm:col-span-2 lg:col-span-2">
           <label class="text-xs font-semibold text-textPrimary mb-1">Nama Hotel *</label>
           <div class="relative flex items-center">
             <span class="material-symbols-outlined absolute left-2.5 text-textMuted text-[18px]"
@@ -200,7 +205,7 @@ function handleGuestsSaved() {
               type="text"
               readonly
               placeholder="Otomatis terisi..."
-              class="w-full h-9 pl-8 pr-3 rounded-lg bg-surfaceCanvas border border-gray-200 text-xs text-textMuted font-semibold cursor-not-allowed focus:outline-none"
+              class="w-full h-9 pl-8 pr-3 rounded-lg bg-surfaceCanvas border border-gray-200 text-xs text-textMuted font-semibold cursor-not-allowed focus:outline-none truncate"
             />
           </div>
         </div>
@@ -212,7 +217,7 @@ function handleGuestsSaved() {
             <button
               type="button"
               @click="decreaseRoom"
-              class="w-6 h-6 flex items-center justify-center text-textMuted hover:text-textPrimary font-bold cursor-pointer"
+              class="w-6 h-6 flex items-center justify-center text-textMuted hover:text-textPrimary font-bold cursor-pointer active:scale-95"
             >
               -
             </button>
@@ -222,7 +227,7 @@ function handleGuestsSaved() {
             <button
               type="button"
               @click="increaseRoom"
-              class="w-6 h-6 flex items-center justify-center text-textMuted hover:text-textPrimary font-bold cursor-pointer"
+              class="w-6 h-6 flex items-center justify-center text-textMuted hover:text-textPrimary font-bold cursor-pointer active:scale-95"
             >
               +
             </button>
@@ -253,17 +258,17 @@ function handleGuestsSaved() {
 
       <!-- BARIS ESTIMASI & TOMBOL TAMBAHKAN KE DAFTAR -->
       <div
-        class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 border-t border-gray-100"
+        class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2 border-t border-gray-100"
       >
-        <div class="flex items-center gap-4">
+        <div class="flex items-center justify-between sm:justify-start gap-3">
           <div
-            class="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 text-xs font-bold flex items-center gap-1.5"
+            class="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 text-xs font-bold flex items-center gap-1.5 shrink-0"
           >
             <span class="material-symbols-outlined text-[16px]">schedule</span>
             <span>{{ newHotel.durationNights }} Malam</span>
           </div>
           <div class="text-xs">
-            <span class="text-textMuted">Estimasi Subtotal: </span>
+            <span class="text-textMuted">Subtotal: </span>
             <strong class="text-textPrimary font-headline text-sm ml-1">
               Rp {{ calculatedSubtotal.toLocaleString('id-ID') }}
             </strong>
@@ -273,7 +278,7 @@ function handleGuestsSaved() {
         <button
           type="button"
           @click="handleAddHotel"
-          class="px-5 py-2 rounded-lg bg-primary hover:bg-primaryHover text-onPrimary text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+          class="w-full sm:w-auto justify-center px-5 py-2 rounded-lg bg-primary hover:bg-primaryHover text-onPrimary text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer active:scale-[0.98]"
         >
           <span class="material-symbols-outlined text-[18px]">add_circle</span>
           <span>Tambahkan ke Daftar</span>
@@ -281,24 +286,106 @@ function handleGuestsSaved() {
       </div>
     </div>
 
-    <!-- Tabel Daftar Pemesanan Hotel -->
+    <!-- Section Daftar Pemesanan Hotel -->
     <div class="space-y-3 pt-2">
-      <div class="flex items-center justify-between">
-        <h3 class="text-xs font-bold text-textPrimary font-headline uppercase tracking-wider">
-          Daftar Pemesanan Hotel
-          <span class="px-2 py-0.5 rounded bg-surfaceContainerLow text-primary ml-1">
-            {{ editStore.hotels.length }} Hotel tersimpan
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+        <h3
+          class="text-xs font-bold text-textPrimary font-headline uppercase tracking-wider flex items-center gap-1.5"
+        >
+          <span>Daftar Pemesanan Hotel</span>
+          <span class="px-2 py-0.5 rounded bg-surfaceContainerLow text-primary text-[10px]">
+            {{ editStore.hotels.length }} Tersimpan
           </span>
         </h3>
-        <span class="text-[11px] text-textMuted">
+        <span class="text-xs text-textMuted">
           Total Akomodasi:
-          <strong class="text-emerald-700 font-bold">
+          <strong class="text-emerald-700 font-bold text-sm">
             Rp {{ editStore.totalHotelCost.toLocaleString('id-ID') }}
           </strong>
         </span>
       </div>
 
-      <div class="overflow-x-auto border border-gray-100 rounded-xl bg-surfaceCard">
+      <!-- 🟢 1. VIEW MOBILE: Kartu Item Hotel (Tampil di Layar HP) -->
+      <div class="block sm:hidden space-y-3">
+        <div
+          v-if="editStore.hotels.length === 0"
+          class="p-6 text-center text-textMuted text-xs border border-dashed border-gray-200 rounded-xl"
+        >
+          Belum ada pemesanan hotel yang ditambahkan. Isi form di atas lalu klik
+          <strong>"Tambahkan ke Daftar"</strong>.
+        </div>
+
+        <div
+          v-else
+          v-for="(item, idx) in editStore.hotels"
+          :key="item.id || idx"
+          class="bg-surfaceCanvas/50 border border-gray-200/80 rounded-xl p-3.5 space-y-3 relative"
+        >
+          <!-- Nama Hotel & Kota -->
+          <div class="flex items-start justify-between gap-2 pb-2.5 border-b border-gray-200/60">
+            <div>
+              <div class="flex items-center gap-1.5">
+                <span class="text-[11px] font-bold text-textMuted">#{{ idx + 1 }}</span>
+                <h4 class="font-bold text-textPrimary font-headline text-xs">
+                  {{ item.hotelNameCustom }}
+                </h4>
+              </div>
+              <span class="text-[11px] text-textMuted block mt-0.5">
+                📍 {{ item.cityName || 'Kota tidak diset' }}
+              </span>
+            </div>
+
+            <button
+              type="button"
+              @click="removeHotel(idx)"
+              class="p-1 text-rose-600 hover:text-rose-800 transition-colors cursor-pointer shrink-0"
+              title="Hapus Pemesanan"
+            >
+              <span class="material-symbols-outlined text-[18px]">delete</span>
+            </button>
+          </div>
+
+          <!-- Rincian Kamar, Periode, & Subtotal -->
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <div class="space-y-0.5">
+              <span class="text-[10px] text-textMuted uppercase font-bold block"
+                >Kamar & Durasi</span
+              >
+              <div class="font-semibold text-textPrimary">
+                {{ item.roomCount }} Kamar · {{ item.durationNights }} Malam
+              </div>
+              <span class="text-[10px] text-textMuted block">
+                Rp {{ (item.pricePerNight || 0).toLocaleString('id-ID') }} / malam
+              </span>
+            </div>
+
+            <div class="space-y-0.5 text-right">
+              <span class="text-[10px] text-textMuted uppercase font-bold block">Subtotal</span>
+              <strong class="text-xs font-bold text-primary font-headline block">
+                Rp {{ (item.subtotalPrice || 0).toLocaleString('id-ID') }}
+              </strong>
+              <span class="text-[10px] text-textMuted block">
+                {{ item.checkInDate }} ➔ {{ item.checkOutDate }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Tombol Isi Data Penginap Mobile -->
+          <div class="pt-2 border-t border-gray-200/60">
+            <button
+              type="button"
+              @click="openGuestsModal(item)"
+              class="w-full px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 font-bold text-[11px] hover:bg-blue-100 transition-colors flex items-center justify-center gap-1.5 border border-blue-100 cursor-pointer active:scale-[0.98]"
+            >
+              <span class="material-symbols-outlined text-[16px]">person_add</span>
+              <span>Isi Data Penginap ({{ item.guests?.length || 0 }} Tamu)</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 💻 2. VIEW DESKTOP: Tabel Tradisional (Tampil di Tablet/Laptop) -->
+      <div class="hidden sm:block overflow-x-auto border border-gray-100 rounded-xl bg-surfaceCard">
         <table class="w-full text-left text-xs font-body">
           <thead
             class="bg-surfaceCanvas text-textMuted font-semibold uppercase text-[10px] tracking-wider border-b border-gray-100"
@@ -358,7 +445,7 @@ function handleGuestsSaved() {
                 <button
                   type="button"
                   @click="openGuestsModal(item)"
-                  class="px-3 py-1 rounded-lg bg-blue-50 text-blue-700 font-bold text-[11px] hover:bg-blue-100 transition-colors inline-flex items-center gap-1 shadow-2xs cursor-pointer"
+                  class="px-3 py-1 rounded-lg bg-blue-50 text-blue-700 font-bold text-[11px] hover:bg-blue-100 transition-colors inline-flex items-center gap-1 shadow-2xs cursor-pointer active:scale-95"
                 >
                   <span class="material-symbols-outlined text-[14px]">person_add</span>
                   <span>Isi Data Penginap ({{ item.guests?.length || 0 }} Tamu)</span>

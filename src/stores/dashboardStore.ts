@@ -1,107 +1,148 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
-
-export interface TravelOrder {
-  id: string
-  code: string
-  type: 'flight' | 'train' | 'sea' | 'bus' | 'car' | 'hotel'
-  subType: string
-  title: string
-  unit: string
-  date: string
-  time: string
-  travellersCount: number
-  status: 'pending' | 'approved' | 'returned' | 'rejected'
-}
+import { ref } from 'vue'
+import { dashboardService } from '@/services/dashboardService'
+import type {
+  DashboardQueryParams,
+  DashboardKpiStats,
+  OngoingTraveller,
+  DashboardBudgetSummary,
+  RecentOrderItem,
+  DashboardPaginationMeta,
+} from '@/models/dashboard'
 
 export const useDashboardStore = defineStore('dashboard', () => {
-  const searchQuery = ref('')
-  const activeFilter = ref<string>('all')
-
-  const orders = ref<TravelOrder[]>([
-    {
-      id: '1',
-      code: 'TO/2026/05/00187',
-      type: 'flight',
-      subType: 'Tiket PP • Garuda',
-      title: 'Rapat Koordinasi Nasional Kepesertaan 2026',
-      unit: 'Kantor Cabang Jakarta Menara Jamsostek',
-      date: '18 Mei 2026',
-      time: '08:45 WIB',
-      travellersCount: 3,
-      status: 'pending'
-    },
-    {
-      id: '2',
-      code: 'TO/2026/05/00185',
-      type: 'train',
-      subType: 'Taksaka Eksekutif',
-      title: 'Sosialisasi Jaminan Kehilangan Pekerjaan (JKP)',
-      unit: 'Kantor Wilayah DIY & Jawa Tengah',
-      date: '16 Mei 2026',
-      time: '14:20 WIB',
-      travellersCount: 2,
-      status: 'approved'
-    },
-    {
-      id: '3',
-      code: 'TO/2026/05/00179',
-      type: 'hotel',
-      subType: 'Hotel Aryaduta 3 Malam',
-      title: 'Pendampingan Audit Eksternal BPK RI',
-      unit: 'Divisi Keuangan & Akuntansi Kantor Pusat',
-      date: '15 Mei 2026',
-      time: '11:05 WIB',
-      travellersCount: 1,
-      status: 'returned'
-    },
-    {
-      id: '4',
-      code: 'TO/2026/05/00171',
-      type: 'car',
-      subType: 'Avanza Dinas + BBM',
-      title: 'Survey Lapangan Verifikasi Klaim JKK Kecelakaan Kerja',
-      unit: 'Kantor Cabang Pratama Cikarang',
-      date: '12 Mei 2026',
-      time: '16:30 WIB',
-      travellersCount: 4,
-      status: 'rejected'
-    },
-    {
-      id: '5',
-      code: 'TO/2026/05/00168',
-      type: 'sea',
-      subType: 'KM Sinabung Kelas 1',
-      title: 'Kunjungan Kerja Wilayah Terluar & Pesisir Maluku',
-      unit: 'Kantor Cabang Ambon',
-      date: '09 Mei 2026',
-      time: '09:12 WIB',
-      travellersCount: 5,
-      status: 'approved'
-    }
-  ])
-
-  const filteredOrders = computed(() => {
-    return orders.value.filter(order => {
-      const matchesSearch =
-        order.code.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-        order.title.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-        order.unit.toLowerCase().includes(searchQuery.value.toLowerCase())
-
-      if (activeFilter.value === 'all') return matchesSearch
-      return matchesSearch && order.status === activeFilter.value
-    })
+  // ====================================================================
+  // STATE
+  // ====================================================================
+  const filters = ref<DashboardQueryParams>({
+    search: '',
+    status: 'ALL',
+    limit: 5,
+    page: 1,
+    monthYear: undefined,
   })
 
-  function setFilter(filter: string) {
-    activeFilter.value = filter
+  const kpiStats = ref<DashboardKpiStats>({
+    waitingCount: 0,
+    approvedThisMonthCount: 0,
+    returnedCount: 0,
+    rejectedCount: 0,
+  })
+
+  const ongoingTravellers = ref<OngoingTraveller[]>([])
+
+  const budgetSummary = ref<DashboardBudgetSummary>({
+    paguTotal: 0,
+    realisasi: 0,
+    pending: 0,
+    sisa: 0,
+    percentageTerpakai: 0,
+  })
+
+  const recentOrders = ref<RecentOrderItem[]>([])
+
+  const meta = ref<DashboardPaginationMeta>({
+    totalData: 0,
+    currentPage: 1,
+    totalPages: 1,
+    limit: 5,
+  })
+
+  const isLoading = ref<boolean>(false)
+
+  // ====================================================================
+  // ACTIONS
+  // ====================================================================
+
+  /**
+   * Memuat seluruh data ringkasan dashboard sesuai filter aktif
+   */
+  async function fetchOverview(): Promise<void> {
+    isLoading.value = true
+    try {
+      const data = await dashboardService.getOverview(filters.value)
+      kpiStats.value = data.kpiStats || {
+        waitingCount: 0,
+        approvedThisMonthCount: 0,
+        returnedCount: 0,
+        rejectedCount: 0,
+      }
+      ongoingTravellers.value = data.ongoingTravellers || []
+      budgetSummary.value = data.budgetSummary || {
+        paguTotal: 0,
+        realisasi: 0,
+        pending: 0,
+        sisa: 0,
+        percentageTerpakai: 0,
+      }
+      recentOrders.value = data.recentOrders || []
+      meta.value = data.meta || {
+        totalData: 0,
+        currentPage: 1,
+        totalPages: 1,
+        limit: 5,
+      }
+    } catch (error) {
+      console.error('Gagal memuat data overview dashboard:', error)
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  /**
+   * Mengubah status filter pengajuan (Semua, Menunggu, Disetujui, Perlu Revisi)
+   */
+  async function setStatusFilter(status: DashboardQueryParams['status']): Promise<void> {
+    filters.value.status = status
+    filters.value.page = 1
+    await fetchOverview()
+  }
+
+  /**
+   * Melakukan pencarian berdasarkan kata kunci
+   */
+  async function setSearchQuery(searchStr: string): Promise<void> {
+    filters.value.search = searchStr
+    filters.value.page = 1
+    await fetchOverview()
+  }
+
+  /**
+   * Berpindah halaman pagination pada tabel Pengajuan Terakhir
+   */
+  async function changePage(newPage: number): Promise<void> {
+    if (newPage >= 1 && newPage <= meta.value.totalPages) {
+      filters.value.page = newPage
+      await fetchOverview()
+    }
+  }
+
+  /**
+   * Reset seluruh filter ke kondisi bawaan
+   */
+  async function resetFilters(): Promise<void> {
+    filters.value = {
+      search: '',
+      status: 'ALL',
+      limit: 5,
+      page: 1,
+      monthYear: undefined,
+    }
+    await fetchOverview()
   }
 
   return {
-    searchQuery,
-    activeFilter,
-    orders,
-    filteredOrders,
-    setFilter
+    filters,
+    kpiStats,
+    ongoingTravellers,
+    budgetSummary,
+    recentOrders,
+    meta,
+    isLoading,
+    fetchOverview,
+    setStatusFilter,
+    setSearchQuery,
+    changePage,
+    resetFilters,
   }
 })

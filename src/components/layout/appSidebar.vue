@@ -17,7 +17,8 @@ const authStore = useAuthStore()
 const orderStore = useOrderStore()
 
 const isNavUtamaOpen = ref(true)
-const isPengajuanOpen = ref(true)
+const isTransportOpen = ref(true)
+const isHotelOpen = ref(true)
 const isMonitoringOpen = ref(true)
 const isMasterOpen = ref(true)
 const isUserControlOpen = ref(true)
@@ -71,7 +72,6 @@ function handleProfileClick() {
   emit('close-sidebar')
 }
 
-// 🟢 Helper Pengecekan Akses (Tanpa otomatis me-return true untuk SUPER_ADMIN jika array spesifik dipisah)
 function hasAccess(allowedRoles: string[]): boolean {
   if (!authStore.activeRole) return false
   return allowedRoles.includes(authStore.activeRole)
@@ -79,21 +79,18 @@ function hasAccess(allowedRoles: string[]): boolean {
 
 const approvalStore = useApprovalStore()
 
-// Ambil data counts saat komponen sidebar di-mount (jika belum dimuat)
 onMounted(() => {
   if (approvalStore.counts.pending === 0) {
     approvalStore.fetchInbox()
   }
 })
 
-// 🟢 Computed untuk format teks badge (1-99, atau 99+)
 const pendingBadgeText = computed(() => {
   const count = approvalStore.counts.pending || 0
   if (count > 99) return '99+'
   return count.toString()
 })
 
-// 🟢 Computed untuk mengecek apakah badge perlu ditampilkan (muncul jika > 0)
 const showPendingBadge = computed(() => {
   return (approvalStore.counts.pending || 0) > 0
 })
@@ -107,7 +104,7 @@ const showPendingBadge = computed(() => {
     ]"
   >
     <div class="flex flex-col h-full overflow-y-auto">
-      <!-- Header Logo & Close Mobile -->
+      <!-- Header Logo -->
       <div
         class="h-16 px-4 py-3 flex items-center justify-between border-b border-gray-100 shrink-0"
       >
@@ -139,7 +136,7 @@ const showPendingBadge = computed(() => {
       </div>
 
       <!-- Navigasi Utama -->
-      <nav class="flex-1 px-3 py-3 space-y-3 text-xs font-semibold">
+      <nav class="flex-1 px-3 py-3 space-y-4 text-xs font-semibold">
         <!-- GROUP 1: NAVIGASI UTAMA -->
         <div
           v-if="
@@ -188,23 +185,23 @@ const showPendingBadge = computed(() => {
           </div>
         </div>
 
-        <!-- GROUP 2: PENGAJUAN SURAT TUGAS -->
+        <!-- GROUP 2: PENGAJUAN TRANSPORTASI -->
         <div v-if="hasAccess(['SUPER_ADMIN', 'OFFICIAL_BOOKER'])" class="space-y-1">
           <button
             type="button"
-            @click="isPengajuanOpen = !isPengajuanOpen"
+            @click="isTransportOpen = !isTransportOpen"
             class="w-full px-3 py-1 flex items-center justify-between text-[10px] font-bold text-textMuted uppercase tracking-wider hover:text-textPrimary transition-colors"
           >
-            <span>PENGAJUAN SURAT TUGAS</span>
+            <span>PENGAJUAN TRANSPORTASI</span>
             <span
               class="material-symbols-outlined text-[16px] transition-transform duration-200"
-              :class="{ 'rotate-180': !isPengajuanOpen }"
+              :class="{ 'rotate-180': !isTransportOpen }"
             >
               keyboard_arrow_down
             </span>
           </button>
 
-          <div v-show="isPengajuanOpen" class="space-y-0.5 pt-0.5">
+          <div v-show="isTransportOpen" class="space-y-0.5 pt-0.5">
             <button
               v-for="item in [
                 { type: 'flight', label: 'Pesawat Udara', icon: 'flight' },
@@ -212,7 +209,6 @@ const showPendingBadge = computed(() => {
                 { type: 'sea', label: 'Kapal Laut', icon: 'directions_boat' },
                 { type: 'bus', label: 'Bus / Travel', icon: 'directions_bus' },
                 { type: 'car', label: 'Mobil Dinas', icon: 'directions_car' },
-                { type: 'hotel', label: 'Akomodasi Hotel', icon: 'hotel' },
               ]"
               :key="item.type"
               type="button"
@@ -224,15 +220,54 @@ const showPendingBadge = computed(() => {
                   : 'text-textPrimary hover:bg-surfaceCanvas',
               ]"
             >
-              <span class="material-symbols-outlined text-textMuted text-[18px]">{{
-                item.icon
-              }}</span>
+              <span
+                class="material-symbols-outlined text-[18px]"
+                :class="isSubmenuActive(item.type) ? 'text-primary' : 'text-textMuted'"
+                >{{ item.icon }}</span
+              >
               <span>{{ item.label }}</span>
             </button>
           </div>
         </div>
 
-        <!-- GROUP 3: MONITORING & AUDIT -->
+        <!-- GROUP 3: PENGAJUAN AKOMODASI (DIPISAHAN DARI TRANSPORT) -->
+        <div v-if="hasAccess(['SUPER_ADMIN', 'OFFICIAL_BOOKER'])" class="space-y-1">
+          <button
+            type="button"
+            @click="isHotelOpen = !isHotelOpen"
+            class="w-full px-3 py-1 flex items-center justify-between text-[10px] font-bold text-textMuted uppercase tracking-wider hover:text-textPrimary transition-colors"
+          >
+            <span>AKOMODASI & PENGINAPAN</span>
+            <span
+              class="material-symbols-outlined text-[16px] transition-transform duration-200"
+              :class="{ 'rotate-180': !isHotelOpen }"
+            >
+              keyboard_arrow_down
+            </span>
+          </button>
+
+          <div v-show="isHotelOpen" class="space-y-0.5 pt-0.5">
+            <button
+              type="button"
+              @click="navigateToOrder('hotel')"
+              :class="[
+                'w-full flex items-center gap-3 px-3 py-1.5 rounded-xl transition-all text-left',
+                isSubmenuActive('hotel')
+                  ? 'bg-emerald-50 text-primary font-bold border-l-4 border-primary'
+                  : 'text-textPrimary hover:bg-surfaceCanvas',
+              ]"
+            >
+              <span
+                class="material-symbols-outlined text-[18px]"
+                :class="isSubmenuActive('hotel') ? 'text-primary' : 'text-textMuted'"
+                >hotel</span
+              >
+              <span>Akomodasi Hotel</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- GROUP 4: MONITORING & AUDIT -->
         <div
           v-if="
             hasAccess([
@@ -301,7 +336,6 @@ const showPendingBadge = computed(() => {
                 <span>Inbox Persetujuan</span>
               </div>
 
-              <!-- 🟢 Badge reaktif: Otomatis sembunyi jika 0, dan menampilkan 99+ jika > 99 -->
               <span
                 v-if="showPendingBadge"
                 class="px-1.5 min-w-[18px] h-4 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center leading-none"
@@ -333,7 +367,7 @@ const showPendingBadge = computed(() => {
           </div>
         </div>
 
-        <!-- GROUP 4: ADMINISTRASI MASTER -->
+        <!-- GROUP 5: ADMINISTRASI MASTER -->
         <div
           v-if="hasAccess(['SUPER_ADMIN', 'ADMIN_TRAVEL_KP', 'ASDEP_KEUANGAN'])"
           class="space-y-1"
@@ -360,19 +394,20 @@ const showPendingBadge = computed(() => {
               :class="[
                 'flex items-center gap-3 px-3 py-2 rounded-xl transition-colors',
                 route.path.startsWith('/master/vendors')
-                  ? 'bg-emerald-800 text-white font-bold shadow-2xs'
+                  ? 'bg-emerald-50 text-primary font-bold border-l-4 border-primary'
                   : 'text-textPrimary hover:bg-surfaceCanvas',
               ]"
             >
               <span
                 class="material-symbols-outlined text-[18px]"
-                :class="route.path.startsWith('/master/vendors') ? 'text-white' : 'text-textMuted'"
+                :class="
+                  route.path.startsWith('/master/vendors') ? 'text-primary' : 'text-textMuted'
+                "
                 >storefront</span
               >
               <span>Maskapai & Vendor</span>
             </router-link>
 
-            <!-- Di bagian GROUP 4: ADMINISTRASI MASTER dalam Sidebar.vue -->
             <router-link
               v-if="hasAccess(['SUPER_ADMIN', 'ADMIN_TRAVEL_KP'])"
               to="/master/cities-airports"
@@ -380,20 +415,23 @@ const showPendingBadge = computed(() => {
               :class="[
                 'flex items-center gap-3 px-3 py-2 rounded-xl transition-colors',
                 route.path.startsWith('/master/cities-airports')
-                  ? 'bg-emerald-800 text-white font-bold shadow-2xs'
+                  ? 'bg-emerald-50 text-primary font-bold border-l-4 border-primary'
                   : 'text-textPrimary hover:bg-surfaceCanvas',
               ]"
             >
               <span
                 class="material-symbols-outlined text-[18px]"
                 :class="
-                  route.path.startsWith('/master/cities-airports') ? 'text-white' : 'text-textMuted'
+                  route.path.startsWith('/master/cities-airports')
+                    ? 'text-primary'
+                    : 'text-textMuted'
                 "
               >
                 location_city
               </span>
               <span>Kota & Bandara</span>
             </router-link>
+
             <router-link
               v-if="hasAccess(['SUPER_ADMIN', 'ASDEP_KEUANGAN'])"
               to="/master/budget"
@@ -401,13 +439,13 @@ const showPendingBadge = computed(() => {
               :class="[
                 'flex items-center gap-3 px-3 py-2 rounded-xl transition-colors',
                 route.path.startsWith('/master/budget')
-                  ? 'bg-emerald-800 text-white font-bold shadow-2xs'
+                  ? 'bg-emerald-50 text-primary font-bold border-l-4 border-primary'
                   : 'text-textPrimary hover:bg-surfaceCanvas',
               ]"
             >
               <span
                 class="material-symbols-outlined text-[18px]"
-                :class="route.path.startsWith('/master/budget') ? 'text-white' : 'text-textMuted'"
+                :class="route.path.startsWith('/master/budget') ? 'text-primary' : 'text-textMuted'"
                 >account_balance_wallet</span
               >
               <span>Mata Anggaran (MAK)</span>
@@ -415,7 +453,7 @@ const showPendingBadge = computed(() => {
           </div>
         </div>
 
-        <!-- 🟢 GROUP 5: MANAJEMEN PENGGUNA (PALING BAWAH & KHUSUS SUPER_ADMIN SAJA) -->
+        <!-- GROUP 6: MANAJEMEN PENGGUNA -->
         <div v-if="hasAccess(['SUPER_ADMIN'])" class="space-y-1">
           <button
             type="button"
@@ -438,13 +476,13 @@ const showPendingBadge = computed(() => {
               :class="[
                 'flex items-center gap-3 px-3 py-2 rounded-xl transition-colors',
                 route.path.startsWith('/users')
-                  ? 'bg-emerald-800 text-white font-bold shadow-2xs'
+                  ? 'bg-emerald-50 text-primary font-bold border-l-4 border-primary'
                   : 'text-textPrimary hover:bg-surfaceCanvas',
               ]"
             >
               <span
                 class="material-symbols-outlined text-[18px]"
-                :class="route.path.startsWith('/users') ? 'text-white' : 'text-textMuted'"
+                :class="route.path.startsWith('/users') ? 'text-primary' : 'text-textMuted'"
                 >manage_accounts</span
               >
               <span>Kelola User & Role</span>

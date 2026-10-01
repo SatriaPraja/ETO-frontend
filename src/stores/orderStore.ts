@@ -316,7 +316,7 @@ export const useOrderStore = defineStore('order', () => {
         roomCount: hotel.roomCount,
         checkInDate: hotel.checkInDate,
         checkOutDate: hotel.checkOutDate,
-        durationNights: hotel.durationNights,
+        durationNights: hotel.durationNights, 
         pricePerNight: hotel.pricePerNight,
         subtotalPrice: hotel.subtotalPrice,
         guests: (hotel.guests || [])

@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import VendorFormHeader from '@/components/master/addVendor/vendorFormHeader.vue'
-import VendorInfoFormCard from '@/components/master/addVendor/vendorInfoFormCard.vue'
-import VendorClassConfigCard from '@/components/master/addVendor/vendorClassConfigCard.vue'
-import VendorMappingSidebarCard from '@/components/master/addVendor/vendorMappingSidebarCard.vue'
-import VendorFormFooterBar from '@/components/master/addVendor/vendorFormFooterBar.vue'
+import VendorFormHeader from '@/components/master/vendor/addVendor/vendorFormHeader.vue'
+import VendorInfoFormCard from '@/components/master/vendor/addVendor/vendorInfoFormCard.vue'
+import VendorClassConfigCard from '@/components/master/vendor/addVendor/vendorClassConfigCard.vue'
+import VendorMappingSidebarCard from '@/components/master/vendor/addVendor/vendorMappingSidebarCard.vue'
+import VendorFormFooterBar from '@/components/master/vendor/addVendor/vendorFormFooterBar.vue'
 </script>
 
 <template>

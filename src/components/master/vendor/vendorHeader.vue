@@ -30,7 +30,8 @@ function handleExportData() {
           Master Maskapai & Rekanan Transportasi
         </h1>
         <p class="text-xs text-textMuted mt-1">
-          Kelola daftar mitra penyedia moda transportasi dinas, integrasi API, dan status aktif pemesanan.
+          Kelola daftar mitra penyedia moda transportasi dinas, integrasi API, dan status aktif
+          pemesanan.
         </p>
       </div>
 

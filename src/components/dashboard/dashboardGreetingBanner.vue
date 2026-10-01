@@ -1,3 +1,9 @@
+<script setup lang="ts">
+import { useAuthStore } from '@/stores/authStore'
+
+const authStore = useAuthStore()
+</script>
+
 <template>
   <section
     class="relative overflow-hidden rounded-xl bg-surfaceCard p-6 shadow-sm border border-gray-100"
@@ -11,7 +17,8 @@
           <span>Sistem Aktif • Terintegrasi SIPP BPJSTK</span>
         </div>
         <h1 class="text-2xl lg:text-3xl font-bold text-textPrimary font-headline tracking-tight">
-          Selamat datang, <span class="text-primary">Andi Pratama</span>
+          Selamat datang,
+          <span class="text-primary">{{ authStore.user?.namaLengkap || 'Pegawai' }}</span>
         </h1>
         <p class="text-xs text-textMuted leading-relaxed">
           Pastikan pengajuan e-TO terisi lengkap dan sesuai ketentuan perjalanan dinas kantor BPJS
@@ -25,14 +32,14 @@
           class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-surfaceCanvas hover:bg-gray-200 text-textPrimary text-xs font-semibold transition-all"
         >
           <span class="material-symbols-outlined text-[18px]">download</span>
-          <span>Pedoman SPO 2026</span>
+          <span>Pedoman SPO</span>
         </button>
         <button
           type="button"
           class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary hover:bg-primaryHover text-onPrimary text-xs font-semibold transition-all shadow-sm"
         >
           <span class="material-symbols-outlined text-[18px]">history_edu</span>
-          <span>Draft Disimpan (2)</span>
+          <span>Draft Disimpan</span>
         </button>
       </div>
     </div>

@@ -1,29 +1,53 @@
 <script setup lang="ts">
+import { ref, watch } from 'vue'
 import { useDashboardStore } from '@/stores/dashboardStore'
+import type { DashboardQueryParams } from '@/models/dashboard'
 
 const dashboardStore = useDashboardStore()
 
-function getTransportIcon(type: string) {
-  switch (type) {
-    case 'flight': return { icon: 'flight', bg: 'bg-[#30C5F7]' }
-    case 'train': return { icon: 'train', bg: 'bg-[#FF8927]' }
-    case 'sea': return { icon: 'directions_boat', bg: 'bg-[#0099FF]' }
-    case 'bus': return { icon: 'directions_bus', bg: 'bg-[#6A0000]' }
-    case 'car': return { icon: 'directions_car', bg: 'bg-[#00BE5F]' }
-    case 'hotel': return { icon: 'hotel', bg: 'bg-[#930049]' }
-    default: return { icon: 'travel_explore', bg: 'bg-primary' }
+const searchInput = ref(dashboardStore.filters.search || '')
+
+// Debounce pencarian
+let searchTimeout: ReturnType<typeof setTimeout>
+function handleSearch() {
+  clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => {
+    dashboardStore.setSearchQuery(searchInput.value)
+  }, 400)
+}
+
+function getStatusBadge(status: DashboardQueryParams['status']) {
+  switch (status) {
+    case 'WAITING_PEJABAT':
+      return { label: 'Menunggu Persetujuan', bg: 'bg-blue-50 text-blue-600', dot: 'bg-blue-600' }
+    case 'APPROVED':
+      return { label: 'Disetujui', bg: 'bg-green-50 text-emerald-600', dot: 'bg-emerald-600' }
+    case 'RETURNED':
+      return { label: 'Perlu Revisi', bg: 'bg-amber-50 text-amber-600', dot: 'bg-amber-600' }
+    case 'REJECTED':
+      return { label: 'Ditolak', bg: 'bg-red-50 text-red-600', dot: 'bg-red-600' }
+    case 'CANCELLED':
+      return { label: 'Dibatalkan', bg: 'bg-gray-100 text-gray-600', dot: 'bg-gray-400' }
+    default:
+      return { label: 'Semua Status', bg: 'bg-gray-100 text-gray-600', dot: 'bg-gray-400' }
   }
 }
 
-function getStatusBadge(status: string) {
-  switch (status) {
-    case 'pending': return { label: 'Menunggu Persetujuan Pejabat', bg: 'bg-blue-50 text-blue-600', dot: 'bg-blue-600' }
-    case 'approved': return { label: 'Disetujui', bg: 'bg-green-50 text-emerald-600', dot: 'bg-emerald-600' }
-    case 'returned': return { label: 'Dikembalikan', bg: 'bg-amber-50 text-amber-600', dot: 'bg-amber-600' }
-    case 'rejected': return { label: 'Ditolak', bg: 'bg-red-50 text-red-600', dot: 'bg-red-600' }
-    default: return { label: 'Draft', bg: 'bg-gray-100 text-gray-600', dot: 'bg-gray-400' }
-  }
+function formatDate(dateStr: string) {
+  if (!dateStr) return '-'
+  return new Date(dateStr).toLocaleDateString('id-ID', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  })
 }
+
+const statusFilters: { key: DashboardQueryParams['status']; label: string }[] = [
+  { key: 'ALL', label: 'Semua' },
+  { key: 'WAITING_PEJABAT', label: 'Menunggu' },
+  { key: 'APPROVED', label: 'Disetujui' },
+  { key: 'RETURNED', label: 'Perlu Revisi' },
+]
 </script>
 
 <template>
@@ -32,27 +56,26 @@ function getStatusBadge(status: string) {
     <div class="p-5 space-y-4">
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 class="text-lg font-bold text-textPrimary tracking-tight font-headline">Pengajuan Terakhir</h2>
-          <p class="text-xs text-textMuted font-body">Daftar rekonsiliasi pengajuan perjalanan dinas dalam 30 hari kalender terakhir</p>
+          <h2 class="text-lg font-bold text-textPrimary tracking-tight font-headline">
+            Pengajuan Terakhir
+          </h2>
+          <p class="text-xs text-textMuted font-body">
+            Daftar rekonsiliasi pengajuan perjalanan dinas dalam 30 hari kalender terakhir
+          </p>
         </div>
 
         <!-- Filter Chips -->
         <div class="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
           <button
-            v-for="filter in [
-              { key: 'all', label: 'Semua (18)' },
-              { key: 'pending', label: 'Menunggu (3)' },
-              { key: 'approved', label: 'Disetujui (12)' },
-              { key: 'returned', label: 'Perlu Revisi (2)' }
-            ]"
+            v-for="filter in statusFilters"
             :key="filter.key"
             type="button"
-            @click="dashboardStore.setFilter(filter.key)"
+            @click="dashboardStore.setStatusFilter(filter.key)"
             :class="[
               'px-3 py-1.5 rounded-full text-xs font-semibold transition-colors shrink-0',
-              dashboardStore.activeFilter === filter.key
+              dashboardStore.filters.status === filter.key
                 ? 'bg-primary text-onPrimary shadow-sm'
-                : 'bg-surfaceCanvas text-textMuted hover:text-textPrimary'
+                : 'bg-surfaceCanvas text-textMuted hover:text-textPrimary',
             ]"
           >
             {{ filter.label }}
@@ -63,9 +86,12 @@ function getStatusBadge(status: string) {
       <!-- Search Toolbar -->
       <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-1">
         <div class="relative w-full sm:w-80">
-          <span class="material-symbols-outlined absolute left-3 top-2.5 text-textMuted text-[18px]">search</span>
+          <span class="material-symbols-outlined absolute left-3 top-2.5 text-textMuted text-[18px]"
+            >search</span
+          >
           <input
-            v-model="dashboardStore.searchQuery"
+            v-model="searchInput"
+            @input="handleSearch"
             type="text"
             placeholder="Cari no. e-TO, nama kegiatan..."
             class="w-full h-9 pl-9 pr-4 rounded-lg bg-surfaceCanvas text-xs font-body text-textPrimary placeholder:text-textMuted focus:outline-none focus:bg-surfaceCard transition-all"
@@ -73,11 +99,10 @@ function getStatusBadge(status: string) {
         </div>
 
         <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
-          <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surfaceCanvas text-textMuted text-xs font-semibold">
-            <span class="material-symbols-outlined text-[16px]">calendar_today</span>
-            <span>Mei 2026</span>
-          </div>
-          <button type="button" class="h-9 px-3 rounded-lg bg-surfaceCanvas hover:bg-gray-200 text-textPrimary flex items-center gap-1.5 text-xs font-semibold transition-colors">
+          <button
+            type="button"
+            class="h-9 px-3 rounded-lg bg-surfaceCanvas hover:bg-gray-200 text-textPrimary flex items-center gap-1.5 text-xs font-semibold transition-colors"
+          >
             <span class="material-symbols-outlined text-[16px]">tune</span>
             <span>Filter Lanjutan</span>
           </button>
@@ -89,30 +114,52 @@ function getStatusBadge(status: string) {
     <div class="overflow-x-auto">
       <table class="w-full text-left font-body table-auto">
         <thead>
-          <tr class="bg-surfaceCanvas/80 h-9 text-textMuted uppercase text-[10px] font-bold tracking-wider border-y border-gray-100">
+          <tr
+            class="bg-surfaceCanvas/80 h-9 text-textMuted uppercase text-[10px] font-bold tracking-wider border-y border-gray-100"
+          >
             <th class="px-4 py-2">No. Travel Order</th>
             <th class="px-3 py-2">Nama Kegiatan & Unit Kerja</th>
-            <th class="px-3 py-2">Tanggal Rekam</th>
+            <th class="px-3 py-2">Tanggal Order</th>
             <th class="px-2 py-2 text-center">Total Traveller</th>
             <th class="px-3 py-2">Status Persetujuan</th>
-            <th class="px-4 py-2 text-right">Aksi</th>
+            <!-- <th class="px-4 py-2 text-right">Aksi</th> -->
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100 text-xs">
+          <!-- Loading State -->
+          <tr v-if="dashboardStore.isLoading">
+            <td colspan="6" class="px-4 py-8 text-center text-textMuted">
+              <span class="animate-pulse">Memuat data pengajuan...</span>
+            </td>
+          </tr>
+
+          <!-- Empty State -->
+          <tr v-else-if="dashboardStore.recentOrders.length === 0">
+            <td colspan="6" class="px-4 py-8 text-center text-textMuted">
+              Tidak ada data pengajuan yang ditemukan.
+            </td>
+          </tr>
+
+          <!-- Data Rows -->
           <tr
-            v-for="order in dashboardStore.filteredOrders"
+            v-else
+            v-for="order in dashboardStore.recentOrders"
             :key="order.id"
             class="h-14 bg-surfaceCard hover:bg-surfaceCanvas/50 transition-colors group"
           >
-            <!-- Order Code & Transport Type -->
+            <!-- Order Code -->
             <td class="px-4 py-2.5">
               <div class="flex items-center gap-2.5">
-                <div :class="['w-7 h-7 rounded-lg flex items-center justify-center text-onPrimary shadow-sm shrink-0', getTransportIcon(order.type).bg]">
-                  <span class="material-symbols-outlined text-[16px]">{{ getTransportIcon(order.type).icon }}</span>
+                <div
+                  class="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0"
+                >
+                  <span class="material-symbols-outlined text-[16px]">confirmation_number</span>
                 </div>
                 <div class="flex flex-col min-w-0">
-                  <span class="font-bold text-textPrimary font-headline text-xs truncate">{{ order.code }}</span>
-                  <span class="text-[10px] text-textMuted truncate">{{ order.subType }}</span>
+                  <span class="font-bold text-textPrimary font-headline text-xs truncate">{{
+                    order.toCode
+                  }}</span>
+                  <span class="text-[10px] text-textMuted truncate">{{ order.unitKerjaKode }}</span>
                 </div>
               </div>
             </td>
@@ -120,37 +167,48 @@ function getStatusBadge(status: string) {
             <!-- Activity & Unit -->
             <td class="px-3 py-2.5">
               <div class="flex flex-col max-w-[220px] xl:max-w-[300px]">
-                <span class="font-bold text-textPrimary truncate text-xs">{{ order.title }}</span>
-                <span class="text-[10px] text-textMuted truncate">{{ order.unit }}</span>
+                <span class="font-bold text-textPrimary truncate text-xs">{{
+                  order.activityName
+                }}</span>
+                <span class="text-[10px] text-textMuted truncate">{{ order.unitKerjaNama }}</span>
               </div>
             </td>
 
-            <!-- Date & Time -->
+            <!-- Date -->
             <td class="px-3 py-2.5 whitespace-nowrap">
-              <span class="text-textPrimary font-semibold block text-[11px]">{{ order.date }}</span>
-              <span class="block text-[10px] text-textMuted">{{ order.time }}</span>
+              <span class="text-textPrimary font-semibold block text-[11px]">
+                {{ formatDate(order.orderDate) }}
+              </span>
             </td>
 
             <!-- Travellers Count -->
             <td class="px-2 py-2.5 text-center whitespace-nowrap">
-              <span class="inline-flex items-center justify-center px-2 py-0.5 rounded-full bg-surfaceCanvas font-bold text-textPrimary text-[11px]">
-                {{ order.travellersCount }} Orang
+              <span
+                class="inline-flex items-center justify-center px-2 py-0.5 rounded-full bg-surfaceCanvas font-bold text-textPrimary text-[11px]"
+              >
+                {{ order.totalTravellers }} Orang
               </span>
             </td>
 
             <!-- Status Badge -->
             <td class="px-3 py-2.5 whitespace-nowrap">
-              <span :class="['inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold', getStatusBadge(order.status).bg]">
-                <span :class="['w-1.5 h-1.5 rounded-full shrink-0', getStatusBadge(order.status).dot]"></span>
+              <span
+                :class="[
+                  'inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold',
+                  getStatusBadge(order.status).bg,
+                ]"
+              >
+                <span
+                  :class="['w-1.5 h-1.5 rounded-full shrink-0', getStatusBadge(order.status).dot]"
+                ></span>
                 <span>{{ getStatusBadge(order.status).label }}</span>
               </span>
             </td>
 
-            <!-- Actions -->
+            <!-- Actions
             <td class="px-4 py-2.5 text-right whitespace-nowrap">
               <div class="flex items-center justify-end gap-1">
-                <!-- Status: Approved -->
-                <template v-if="order.status === 'approved'">
+                <template v-if="order.status === 'APPROVED'">
                   <button type="button" class="px-2.5 py-1 rounded-lg bg-surfaceCanvas hover:bg-gray-200 text-textPrimary text-[11px] font-semibold transition-colors">
                     Detail
                   </button>
@@ -160,63 +218,79 @@ function getStatusBadge(status: string) {
                   </button>
                 </template>
 
-                <!-- Status: Returned -->
-                <template v-else-if="order.status === 'returned'">
+                <template v-else-if="order.status === 'RETURNED'">
                   <button type="button" class="px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 text-[11px] font-semibold transition-colors inline-flex items-center gap-1">
                     <span class="material-symbols-outlined text-[14px]">edit</span>
                     <span>Perbaiki</span>
                   </button>
-                  <button type="button" class="p-1 rounded-lg text-textMuted hover:text-textPrimary hover:bg-surfaceCanvas transition-colors" title="Catatan Reviewer">
-                    <span class="material-symbols-outlined text-[16px]">comment</span>
-                  </button>
                 </template>
 
-                <!-- Status: Rejected -->
-                <template v-else-if="order.status === 'rejected'">
-                  <button type="button" class="px-2.5 py-1 rounded-lg bg-surfaceCanvas hover:bg-gray-200 text-textPrimary text-[11px] font-semibold transition-colors">
-                    Alasan Penolakan
-                  </button>
-                </template>
-
-                <!-- Default / Pending -->
                 <template v-else>
                   <button type="button" class="px-2.5 py-1 rounded-lg bg-surfaceCanvas hover:bg-gray-200 text-textPrimary text-[11px] font-semibold transition-colors">
                     Lihat Detail
                   </button>
-                  <button type="button" class="p-1 rounded-lg text-textMuted hover:text-textPrimary hover:bg-surfaceCanvas transition-colors" title="Cetak e-TO">
-                    <span class="material-symbols-outlined text-[16px]">print</span>
-                  </button>
                 </template>
               </div>
-            </td>
+            </td> -->
           </tr>
         </tbody>
       </table>
     </div>
 
     <!-- Table Pagination & Footer -->
-    <div class="px-5 py-3 bg-surfaceCard flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-gray-100">
+    <div
+      class="px-5 py-3 bg-surfaceCard flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-gray-100"
+    >
       <div class="text-xs text-textMuted font-body">
-        Menampilkan <strong class="text-textPrimary">1 - 5</strong> dari total <strong class="text-textPrimary">18</strong> pengajuan e-TO
+        Menampilkan
+        <strong class="text-textPrimary">
+          {{
+            (dashboardStore.meta.currentPage - 1) * dashboardStore.meta.limit +
+            (dashboardStore.recentOrders.length ? 1 : 0)
+          }}
+          -
+          {{
+            Math.min(
+              dashboardStore.meta.currentPage * dashboardStore.meta.limit,
+              dashboardStore.meta.totalData,
+            )
+          }}
+        </strong>
+        dari total
+        <strong class="text-textPrimary">{{ dashboardStore.meta.totalData }}</strong> pengajuan e-TO
       </div>
-      
+
       <div class="flex items-center gap-1 text-xs font-semibold">
-        <button type="button" disabled class="w-7 h-7 rounded-lg bg-surfaceCanvas text-textMuted flex items-center justify-center hover:bg-gray-200 disabled:opacity-50 transition-colors">
+        <button
+          type="button"
+          :disabled="dashboardStore.meta.currentPage <= 1"
+          @click="dashboardStore.changePage(dashboardStore.meta.currentPage - 1)"
+          class="w-7 h-7 rounded-lg bg-surfaceCanvas text-textMuted flex items-center justify-center hover:bg-gray-200 disabled:opacity-50 transition-colors"
+        >
           <span class="material-symbols-outlined text-[16px]">chevron_left</span>
         </button>
-        <button type="button" class="w-7 h-7 rounded-lg bg-primary text-onPrimary flex items-center justify-center shadow-sm">
-          1
+
+        <button
+          v-for="page in dashboardStore.meta.totalPages"
+          :key="page"
+          type="button"
+          @click="dashboardStore.changePage(page)"
+          :class="[
+            'w-7 h-7 rounded-lg flex items-center justify-center transition-colors',
+            dashboardStore.meta.currentPage === page
+              ? 'bg-primary text-onPrimary shadow-sm'
+              : 'text-textPrimary hover:bg-surfaceCanvas',
+          ]"
+        >
+          {{ page }}
         </button>
-        <button type="button" class="w-7 h-7 rounded-lg text-textPrimary hover:bg-surfaceCanvas flex items-center justify-center transition-colors">
-          2
-        </button>
-        <button type="button" class="w-7 h-7 rounded-lg text-textPrimary hover:bg-surfaceCanvas flex items-center justify-center transition-colors">
-          3
-        </button>
-        <button type="button" class="w-7 h-7 rounded-lg text-textPrimary hover:bg-surfaceCanvas flex items-center justify-center transition-colors">
-          4
-        </button>
-        <button type="button" class="w-7 h-7 rounded-lg bg-surfaceCanvas text-textPrimary flex items-center justify-center hover:bg-gray-200 transition-colors">
+
+        <button
+          type="button"
+          :disabled="dashboardStore.meta.currentPage >= dashboardStore.meta.totalPages"
+          @click="dashboardStore.changePage(dashboardStore.meta.currentPage + 1)"
+          class="w-7 h-7 rounded-lg bg-surfaceCanvas text-textPrimary flex items-center justify-center hover:bg-gray-200 disabled:opacity-50 transition-colors"
+        >
           <span class="material-symbols-outlined text-[16px]">chevron_right</span>
         </button>
       </div>

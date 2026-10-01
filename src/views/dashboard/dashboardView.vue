@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useOrderStore, type TransportType } from '@/stores/orderStore'
 
@@ -8,14 +9,20 @@ import QuickOrderHub from '@/components/dashboard/quickOrderHub.vue'
 import ActiveTravelersCard from '@/components/dashboard/activeTravelersCard.vue'
 import BudgetRealizationCard from '@/components/dashboard/budgetRealizationCard.vue'
 import TravelLedgerTable from '@/components/dashboard/travelLedgerTable.vue'
+import { useDashboardStore } from '@/stores/dashboardStore'
 
 const router = useRouter()
 const orderStore = useOrderStore()
+const dashboardStore = useDashboardStore()
 
 function navigateToOrder(type: TransportType) {
   orderStore.setTransport(type)
   router.push('/create-order')
 }
+onMounted(() => {
+  dashboardStore.fetchOverview()
+})
+
 </script>
 
 <template>
