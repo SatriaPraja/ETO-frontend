@@ -24,22 +24,35 @@ const router = createRouter({
           name: 'dashboard',
           component: () => import('../views/dashboard/dashboardView.vue'),
         },
+
+        // 🟢 RUTE 1: Buat Header Travel Order Mandiri Baru
         {
-          path: 'create-order',
-          name: 'create-order',
-          component: () => import('../views/order/createOrderView.vue'),
+          path: 'create-travel-order',
+          name: 'create-travel-order',
+          component: () => import('../views/order/createTravelOrderView.vue'),
         },
+        // 🟢 RUTE 2: Pemesanan Transportasi (Pesawat/Kereta/dll ke TO Existing)
+        {
+          path: 'create-transport-order',
+          name: 'create-transport-order',
+          component: () => import('../views/order/createTransportOrderView.vue'),
+        },
+        // 🟢 RUTE 3: Pemesanan Hotel (Akomodasi ke TO Existing)
+        {
+          path: 'create-hotel-order',
+          name: 'create-hotel-order',
+          component: () => import('../views/order/createHotelOrderView.vue'),
+        },
+
         {
           path: 'history',
           name: 'history',
           component: () => import('../views/history/historyView.vue'),
         },
-
-        // 🟢 FIX 1 & 2: Ubah parameter ke :toCode dan arahkan import ke views/history/
         {
           path: 'history/order-detail/:toCode',
           name: 'order-detail',
-          component: () => import('../views/history/[toCode].vue'), // atau orderDetailView.vue jika file sudah di-rename
+          component: () => import('../views/history/[toCode].vue'),
         },
         {
           path: 'history/edit-order/:toCode',
@@ -51,7 +64,6 @@ const router = createRouter({
           name: 'print-pdf',
           component: () => import('../views/history/pdfPreviewView.vue'),
         },
-
         {
           path: 'approvals',
           name: 'approvals',
@@ -102,7 +114,6 @@ const router = createRouter({
   ],
 })
 
-// Navigation Guard
 router.beforeEach(async (to, _from, next) => {
   const authStore = useAuthStore()
 

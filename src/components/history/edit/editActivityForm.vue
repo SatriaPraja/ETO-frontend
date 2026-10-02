@@ -44,7 +44,7 @@ function handleBudgetSelected(item: any) {
         </div>
         <div>
           <h2 class="text-sm sm:text-base font-bold text-gray-800 font-headline leading-tight">
-            1. Informasi Kegiatan & Anggaran
+            Informasi Kegiatan & Anggaran
           </h2>
           <p class="text-[11px] sm:text-xs text-gray-500 mt-0.5 leading-relaxed">
             Parameter Surat Perintah Resmi dan Pembebanan Anggaran Unit Kerja

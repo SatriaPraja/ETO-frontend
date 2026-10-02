@@ -8,7 +8,6 @@ defineProps<{
 
 const orderStore = useOrderStore()
 
-// 1. Cek Kelengkapan Langkah 01 (Informasi Kegiatan)
 const isStep1Complete = computed(() => {
   const info = orderStore.formInfo
   return Boolean(
@@ -19,7 +18,6 @@ const isStep1Complete = computed(() => {
   )
 })
 
-// 2. Cek Kelengkapan Langkah 02 (Data Traveller / Hotel)
 const isStep2Complete = computed(() => {
   if (orderStore.activeTransport === 'hotel') {
     return orderStore.hotels.length > 0
@@ -27,7 +25,6 @@ const isStep2Complete = computed(() => {
   return orderStore.travellers.length > 0
 })
 
-// 3. Tentukan Langkah Mana yang SEDANG AKTIF secara Otomatis
 const activeStep = computed(() => {
   if (!isStep1Complete.value) return 1
   if (!isStep2Complete.value) return 2
@@ -71,7 +68,7 @@ const activeStep = computed(() => {
       </div>
     </div>
 
-    <!-- Stepper Progress Bar Dinamis (Responsive Container) -->
+    <!-- Stepper Progress Bar Dinamis -->
     <div class="w-full lg:w-auto overflow-x-auto no-scrollbar pt-1 pb-1">
       <div
         class="flex items-center gap-2.5 sm:gap-3 bg-surfaceCanvas p-2.5 sm:p-3 rounded-xl text-xs border border-gray-100 min-w-max lg:min-w-0"

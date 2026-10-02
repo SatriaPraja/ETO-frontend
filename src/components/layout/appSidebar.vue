@@ -2,8 +2,9 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
-import { useOrderStore, type TransportType } from '@/stores/orderStore'
+import { useOrderStore } from '@/stores/orderStore'
 import { useApprovalStore } from '@/stores/approvalStore'
+import type { TransportType } from '@/models/travelOrder'
 
 defineProps<{
   isOpen?: boolean
@@ -17,20 +18,32 @@ const authStore = useAuthStore()
 const orderStore = useOrderStore()
 
 const isNavUtamaOpen = ref(true)
+const isTravelOrderOpen = ref(true)
 const isTransportOpen = ref(true)
 const isHotelOpen = ref(true)
 const isMonitoringOpen = ref(true)
 const isMasterOpen = ref(true)
 const isUserControlOpen = ref(true)
 
-function navigateToOrder(type: TransportType) {
-  orderStore.setTransport(type)
-  router.push('/create-order')
+// Navigasi 1: Halaman Pembuatan Header TO Mandiri
+function navigateToCreateTOHeader() {
+  orderStore.resetForm()
+  router.push('/create-travel-order')
   emit('close-sidebar')
 }
 
-function isSubmenuActive(type: string) {
-  return route.path === '/create-order' && orderStore.activeTransport === type
+// Navigasi 2: Halaman Pemesanan Transportasi
+function navigateToTransportOrder(type: TransportType) {
+  orderStore.setTransport(type)
+  router.push('/create-transport-order')
+  emit('close-sidebar')
+}
+
+// Navigasi 3: Halaman Pemesanan Hotel
+function navigateToHotelOrder() {
+  orderStore.setTransport('hotel')
+  router.push('/create-hotel-order')
+  emit('close-sidebar')
 }
 
 function isRouteActive(path: string) {
@@ -185,14 +198,51 @@ const showPendingBadge = computed(() => {
           </div>
         </div>
 
-        <!-- GROUP 2: PENGAJUAN TRANSPORTASI -->
+        <!-- GROUP 2: HEADER TRAVEL ORDER -->
+        <div v-if="hasAccess(['SUPER_ADMIN', 'OFFICIAL_BOOKER'])" class="space-y-1">
+          <button
+            type="button"
+            @click="isTravelOrderOpen = !isTravelOrderOpen"
+            class="w-full px-3 py-1 flex items-center justify-between text-[10px] font-bold text-textMuted uppercase tracking-wider hover:text-textPrimary transition-colors"
+          >
+            <span>HEADER TRAVEL ORDER</span>
+            <span
+              class="material-symbols-outlined text-[16px] transition-transform duration-200"
+              :class="{ 'rotate-180': !isTravelOrderOpen }"
+            >
+              keyboard_arrow_down
+            </span>
+          </button>
+
+          <div v-show="isTravelOrderOpen" class="space-y-0.5 pt-0.5">
+            <button
+              type="button"
+              @click="navigateToCreateTOHeader"
+              :class="[
+                'w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all text-left',
+                route.path === '/create-travel-order'
+                  ? 'bg-emerald-50 text-primary font-bold border-l-4 border-primary'
+                  : 'text-textPrimary hover:bg-surfaceCanvas',
+              ]"
+            >
+              <span
+                class="material-symbols-outlined text-[18px]"
+                :class="route.path === '/create-travel-order' ? 'text-primary' : 'text-textMuted'"
+                >post_add</span
+              >
+              <span>Buat TO Mandiri Baru</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- GROUP 3: MODUL TRANSPORTASI -->
         <div v-if="hasAccess(['SUPER_ADMIN', 'OFFICIAL_BOOKER'])" class="space-y-1">
           <button
             type="button"
             @click="isTransportOpen = !isTransportOpen"
             class="w-full px-3 py-1 flex items-center justify-between text-[10px] font-bold text-textMuted uppercase tracking-wider hover:text-textPrimary transition-colors"
           >
-            <span>PENGAJUAN TRANSPORTASI</span>
+            <span>MODUL TRANSPORTASI</span>
             <span
               class="material-symbols-outlined text-[16px] transition-transform duration-200"
               :class="{ 'rotate-180': !isTransportOpen }"
@@ -212,17 +262,22 @@ const showPendingBadge = computed(() => {
               ]"
               :key="item.type"
               type="button"
-              @click="navigateToOrder(item.type as TransportType)"
+              @click="navigateToTransportOrder(item.type as TransportType)"
               :class="[
                 'w-full flex items-center gap-3 px-3 py-1.5 rounded-xl transition-all text-left',
-                isSubmenuActive(item.type)
+                route.path === '/create-transport-order' && orderStore.activeTransport === item.type
                   ? 'bg-emerald-50 text-primary font-bold border-l-4 border-primary'
                   : 'text-textPrimary hover:bg-surfaceCanvas',
               ]"
             >
               <span
                 class="material-symbols-outlined text-[18px]"
-                :class="isSubmenuActive(item.type) ? 'text-primary' : 'text-textMuted'"
+                :class="
+                  route.path === '/create-transport-order' &&
+                  orderStore.activeTransport === item.type
+                    ? 'text-primary'
+                    : 'text-textMuted'
+                "
                 >{{ item.icon }}</span
               >
               <span>{{ item.label }}</span>
@@ -230,7 +285,7 @@ const showPendingBadge = computed(() => {
           </div>
         </div>
 
-        <!-- GROUP 3: PENGAJUAN AKOMODASI (DIPISAHAN DARI TRANSPORT) -->
+        <!-- GROUP 4: AKOMODASI & PENGINAPAN -->
         <div v-if="hasAccess(['SUPER_ADMIN', 'OFFICIAL_BOOKER'])" class="space-y-1">
           <button
             type="button"
@@ -249,25 +304,25 @@ const showPendingBadge = computed(() => {
           <div v-show="isHotelOpen" class="space-y-0.5 pt-0.5">
             <button
               type="button"
-              @click="navigateToOrder('hotel')"
+              @click="navigateToHotelOrder"
               :class="[
                 'w-full flex items-center gap-3 px-3 py-1.5 rounded-xl transition-all text-left',
-                isSubmenuActive('hotel')
+                route.path === '/create-hotel-order'
                   ? 'bg-emerald-50 text-primary font-bold border-l-4 border-primary'
                   : 'text-textPrimary hover:bg-surfaceCanvas',
               ]"
             >
               <span
                 class="material-symbols-outlined text-[18px]"
-                :class="isSubmenuActive('hotel') ? 'text-primary' : 'text-textMuted'"
+                :class="route.path === '/create-hotel-order' ? 'text-primary' : 'text-textMuted'"
                 >hotel</span
               >
-              <span>Akomodasi Hotel</span>
+              <span>Pesan Akomodasi Hotel</span>
             </button>
           </div>
         </div>
 
-        <!-- GROUP 4: MONITORING & AUDIT -->
+        <!-- GROUP 5: MONITORING & AUDIT -->
         <div
           v-if="
             hasAccess([
@@ -367,7 +422,7 @@ const showPendingBadge = computed(() => {
           </div>
         </div>
 
-        <!-- GROUP 5: ADMINISTRASI MASTER -->
+        <!-- GROUP 6: ADMINISTRASI MASTER -->
         <div
           v-if="hasAccess(['SUPER_ADMIN', 'ADMIN_TRAVEL_KP', 'ASDEP_KEUANGAN'])"
           class="space-y-1"
@@ -453,7 +508,7 @@ const showPendingBadge = computed(() => {
           </div>
         </div>
 
-        <!-- GROUP 6: MANAJEMEN PENGGUNA -->
+        <!-- GROUP 7: MANAJEMEN PENGGUNA -->
         <div v-if="hasAccess(['SUPER_ADMIN'])" class="space-y-1">
           <button
             type="button"

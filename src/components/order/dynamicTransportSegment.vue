@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useOrderStore } from '@/stores/orderStore'
 import SelectTravelerModal from '@/components/order/modal/selectTravelerModal.vue'
+import AppToastAlert from '@/components/layout/appToastAlert.vue'
 import type { EmployeeItem } from '@/models/employee'
 
 const orderStore = useOrderStore()
@@ -10,13 +11,30 @@ const orderStore = useOrderStore()
 const activeCategory = ref<'INTERNAL' | 'EKSTERNAL'>('INTERNAL')
 const isRoundTrip = ref(true)
 
-// State Modal LOV Personel
+// State Modal LOV & Toast
 const isTravelerModalOpen = ref(false)
+const toastInfo = ref({
+  isOpen: false,
+  title: '',
+  message: '',
+  type: 'error' as 'error' | 'success' | 'warning',
+})
 
-// 🟢 Minimal Tanggal Keberangkatan (Minimal 1 Minggu / 7 Hari dari Hari Ini)
+function showToast(
+  message: string,
+  title = 'Data Belum Lengkap',
+  type: 'error' | 'success' | 'warning' = 'error',
+) {
+  toastInfo.value = { isOpen: true, title, message, type }
+  setTimeout(() => {
+    toastInfo.value.isOpen = false
+  }, 4000)
+}
+
+// Minimal Tanggal Keberangkatan (Minimal 7 Hari ke Depan)
 const minDepDate = computed<string>(() => {
   const targetDate = new Date()
-  targetDate.setDate(targetDate.getDate() - 7)
+  targetDate.setDate(targetDate.getDate() + 7)
   return targetDate.toISOString().split('T')[0] || ''
 })
 
@@ -30,22 +48,29 @@ const form = ref({
   originCity: '',
   destCity: '',
   depDate: minDepDate.value || '',
-  depTime: '00:00',
+  depTime: '08:30',
   maskapai: '',
   kelas: 'Ekonomi',
   retDate: minDepDate.value || '',
-  retTime: '00:00',
+  retTime: '17:45',
   retMaskapai: '',
   retKelas: 'Ekonomi',
   estimatedPrice: 2816666,
 })
 
-// 🟢 Minimal Tanggal Pulang
+// Clear Form saat berganti kategori
+watch(activeCategory, () => {
+  form.value.userId = null
+  form.value.name = ''
+  form.value.npk = ''
+  form.value.jabatan = ''
+  form.value.phone = ''
+})
+
 const minRetDate = computed<string>(() => {
   return form.value.depDate || minDepDate.value || ''
 })
 
-// Function Callback saat Personel Dipilih dari Modal LOV
 function handleTravelerSelected(emp: EmployeeItem) {
   form.value.userId = emp.id
   form.value.name = emp.name
@@ -54,7 +79,12 @@ function handleTravelerSelected(emp: EmployeeItem) {
   form.value.phone = emp.phone || ''
 }
 
-// Icon Dynamic per Moda Transportasi
+function handleNameClick() {
+  if (activeCategory.value === 'INTERNAL') {
+    isTravelerModalOpen.value = true
+  }
+}
+
 const transportIcon = computed(() => {
   switch (orderStore.activeTransport) {
     case 'flight':
@@ -72,33 +102,31 @@ const transportIcon = computed(() => {
   }
 })
 
-// Fungsi Tambahkan ke Order Store
 function handleAddTransport() {
   if (!form.value.name) {
-    alert('Mohon isi nama traveller terlebih dahulu.')
+    showToast(
+      activeCategory.value === 'INTERNAL'
+        ? 'Mohon pilih nama karyawan terlebih dahulu.'
+        : 'Mohon isi nama tamu eksternal terlebih dahulu.',
+    )
     return
   }
   if (!form.value.depDate) {
-    alert('Mohon isi tanggal keberangkatan.')
+    showToast('Mohon isi tanggal keberangkatan.')
     return
   }
-
-  // Validasi Keberangkatan Minimal 1 Minggu (7 Hari)
   if (form.value.depDate < minDepDate.value) {
-    alert('Pengajuan perjalanan dinas minimal dilakukan 1 minggu (7 hari) sebelum keberangkatan.')
+    showToast('Pengajuan perjalanan dinas minimal dilakukan 7 hari sebelum keberangkatan.')
     return
   }
-
-  // Validasi Tanggal Pulang
   if (isRoundTrip.value && form.value.retDate < form.value.depDate) {
-    alert('Tanggal pulang tidak boleh lebih awal dari tanggal keberangkatan.')
+    showToast('Tanggal pulang tidak boleh lebih awal dari tanggal keberangkatan.')
     return
   }
 
   const formattedDepTime = form.value.depTime ? `${form.value.depTime} WIB` : ''
   const formattedRetTime = form.value.retTime ? `${form.value.retTime} WIB` : ''
 
-  // Push Data ke Store Pinia
   orderStore.addTraveller({
     category: activeCategory.value,
     userId: form.value.userId || null,
@@ -107,14 +135,14 @@ function handleAddTransport() {
     jabatanOrInstansi: form.value.jabatan || '-',
     phone: form.value.phone || '-',
 
-    route: `${form.value.originCity} ⇄ ${form.value.destCity}`,
+    route: `${form.value.originCity || 'JKT'} ⇄ ${form.value.destCity || 'SUB'}`,
     originCityId: (form.value as any).originCityId || 1,
     destinationCityId: (form.value as any).destinationCityId || 2,
 
     departureDate: form.value.depDate,
     departureTime: formattedDepTime,
     departureInfo: `${form.value.depDate} · ${formattedDepTime} (Pergi)`,
-    maskapai: form.value.maskapai || '-',
+    maskapai: form.value.maskapai || 'Garuda Indonesia',
     kelas: form.value.kelas || 'Ekonomi',
     transportId: (form.value as any).transportId || 1,
     transportClassId: (form.value as any).transportClassId || 1,
@@ -137,7 +165,9 @@ function handleAddTransport() {
     price: form.value.estimatedPrice || 0,
   })
 
-  // Reset Input Form Personel
+  showToast('Personel & jadwal penerbangan ditambahkan ke daftar.', 'Berhasil', 'success')
+
+  // Reset Input Form
   form.value.userId = null
   form.value.name = ''
   form.value.npk = ''
@@ -150,7 +180,7 @@ function handleAddTransport() {
   <div
     class="bg-surfaceCard rounded-2xl border border-gray-100 p-4 sm:p-6 shadow-2xs space-y-5 font-body"
   >
-    <!-- Header Section 2 -->
+    <!-- Header Section -->
     <div
       class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-gray-100"
     >
@@ -160,7 +190,7 @@ function handleAddTransport() {
         </div>
         <div>
           <h2 class="text-base font-bold text-textPrimary font-headline">
-            2. Data Traveller & Itinerary Penerbangan
+            Data Traveller & Itinerary Penerbangan
           </h2>
           <p class="text-xs text-textMuted mt-0.5 leading-relaxed">
             Tentukan personalia yang ditugaskan beserta rincian jadwal maskapai penerbangan
@@ -176,7 +206,7 @@ function handleAddTransport() {
           type="button"
           @click="activeCategory = 'INTERNAL'"
           :class="[
-            'flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 whitespace-nowrap',
+            'flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer',
             activeCategory === 'INTERNAL'
               ? 'bg-surfaceCard text-emerald-800 shadow-2xs'
               : 'text-textMuted hover:text-textPrimary',
@@ -189,7 +219,7 @@ function handleAddTransport() {
           type="button"
           @click="activeCategory = 'EKSTERNAL'"
           :class="[
-            'flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 whitespace-nowrap',
+            'flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer',
             activeCategory === 'EKSTERNAL'
               ? 'bg-surfaceCard text-emerald-800 shadow-2xs'
               : 'text-textMuted hover:text-textPrimary',
@@ -201,68 +231,105 @@ function handleAddTransport() {
       </div>
     </div>
 
-    <!-- 1. Form Penambahan Personel -->
+    <!-- 1. Form Penambahan Personel (Dinamis Sesuai Kategori) -->
     <div class="space-y-3">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
         <span
           class="text-xs font-bold text-textPrimary uppercase tracking-wider font-headline flex items-center gap-1.5"
         >
           <span class="material-symbols-outlined text-primary text-[18px]">person_add</span>
-          <span>Form Penambahan Personel</span>
+          <span
+            >Form Penambahan Personel ({{
+              activeCategory === 'INTERNAL' ? 'Pegawai BPJS' : 'Tamu Eksternal'
+            }})</span
+          >
         </span>
-        <span class="text-[11px] text-textMuted"
-          >Data penerbangan diverifikasi otomatis dengan kebijakan dinas</span
-        >
+        <span class="text-[11px] text-textMuted">
+          {{
+            activeCategory === 'INTERNAL'
+              ? 'Pilih dari master karyawan BPJS'
+              : 'Isi manual data tamu / personel eksternal'
+          }}
+        </span>
       </div>
 
       <div
         class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 bg-surfaceCard p-3.5 sm:p-4 rounded-xl border border-gray-100 shadow-2xs"
       >
+        <!-- Field Nama -->
         <div class="flex flex-col">
-          <label class="text-xs font-semibold text-textPrimary mb-1">Nama Traveller *</label>
-          <div class="relative cursor-pointer" @click="isTravelerModalOpen = true">
+          <label class="text-xs font-semibold text-textPrimary mb-1"> Nama Traveller * </label>
+          <div class="relative" @click="handleNameClick">
             <input
               type="text"
               v-model="form.name"
-              readonly
-              placeholder="Pilih nama karyawan..."
-              class="w-full h-10 pl-3 pr-9 rounded-xl bg-surfaceCard border border-gray-200 text-xs font-bold text-textPrimary focus:outline-none focus:border-primary cursor-pointer hover:border-primary/60 transition-all"
+              :readonly="activeCategory === 'INTERNAL'"
+              :placeholder="
+                activeCategory === 'INTERNAL'
+                  ? 'Pilih nama karyawan...'
+                  : 'Masukkan nama lengkap...'
+              "
+              :class="[
+                'w-full h-10 pl-3 pr-9 rounded-xl border text-xs font-bold text-textPrimary focus:outline-none transition-all',
+                activeCategory === 'INTERNAL'
+                  ? 'bg-surfaceCard border-gray-200 cursor-pointer hover:border-primary/60'
+                  : 'bg-surfaceCard border-gray-200 focus:border-primary',
+              ]"
             />
             <span
-              class="material-symbols-outlined absolute right-3 top-2.5 text-primary text-[18px]"
-              >search</span
+              v-if="activeCategory === 'INTERNAL'"
+              class="material-symbols-outlined absolute right-3 top-2.5 text-primary text-[18px] pointer-events-none"
             >
+              search
+            </span>
           </div>
         </div>
 
+        <!-- Field NPK / KTP -->
         <div class="flex flex-col">
-          <label class="text-xs font-semibold text-textPrimary mb-1">NPK</label>
+          <label class="text-xs font-semibold text-textPrimary mb-1">
+            {{ activeCategory === 'INTERNAL' ? 'NPK' : 'No. KTP / NIK' }}
+          </label>
           <input
             type="text"
             v-model="form.npk"
-            readonly
-            placeholder="NPK Karyawan"
-            class="h-10 px-3 rounded-xl bg-surfaceCanvas border border-gray-200 text-xs text-textMuted font-mono font-semibold"
+            :readonly="activeCategory === 'INTERNAL'"
+            :placeholder="activeCategory === 'INTERNAL' ? 'NPK Karyawan' : 'Masukkan No. KTP...'"
+            :class="[
+              'h-10 px-3 rounded-xl border text-xs font-mono font-semibold focus:outline-none',
+              activeCategory === 'INTERNAL'
+                ? 'bg-surfaceCanvas border-gray-200 text-textMuted'
+                : 'bg-surfaceCard border-gray-200 text-textPrimary focus:border-primary',
+            ]"
           />
         </div>
 
+        <!-- Field Jabatan / Instansi -->
         <div class="flex flex-col">
-          <label class="text-xs font-semibold text-textPrimary mb-1">Jabatan</label>
+          <label class="text-xs font-semibold text-textPrimary mb-1">
+            {{ activeCategory === 'INTERNAL' ? 'Jabatan' : 'Instansi / Perusahaan' }}
+          </label>
           <input
             type="text"
             v-model="form.jabatan"
-            readonly
-            placeholder="Jabatan"
-            class="h-10 px-3 rounded-xl bg-surfaceCanvas border border-gray-200 text-xs text-textMuted truncate"
+            :readonly="activeCategory === 'INTERNAL'"
+            :placeholder="activeCategory === 'INTERNAL' ? 'Jabatan' : 'Contoh: PT Mitra Utama'"
+            :class="[
+              'h-10 px-3 rounded-xl border text-xs focus:outline-none truncate',
+              activeCategory === 'INTERNAL'
+                ? 'bg-surfaceCanvas border-gray-200 text-textMuted'
+                : 'bg-surfaceCard border-gray-200 text-textPrimary focus:border-primary',
+            ]"
           />
         </div>
 
+        <!-- Field Handphone (Dapat Diisi untuk Kedua Kategori) -->
         <div class="flex flex-col">
           <label class="text-xs font-semibold text-textPrimary mb-1">No. Handphone *</label>
           <div class="relative flex items-center">
-            <span class="material-symbols-outlined absolute left-3 text-textMuted text-[18px]"
-              >call</span
-            >
+            <span class="material-symbols-outlined absolute left-3 text-textMuted text-[18px]">
+              call
+            </span>
             <input
               type="text"
               v-model="form.phone"
@@ -285,7 +352,6 @@ function handleAddTransport() {
         </span>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          <!-- Kota Berangkat (Input Manual) -->
           <div class="flex flex-col">
             <label class="text-xs font-semibold text-textPrimary mb-1">Kota Berangkat *</label>
             <input
@@ -296,7 +362,6 @@ function handleAddTransport() {
             />
           </div>
 
-          <!-- Kota Tujuan (Input Manual) -->
           <div class="flex flex-col">
             <label class="text-xs font-semibold text-textPrimary mb-1">Kota Tujuan *</label>
             <input
@@ -307,7 +372,6 @@ function handleAddTransport() {
             />
           </div>
 
-          <!-- Tanggal Berangkat -->
           <div class="flex flex-col">
             <label class="text-xs font-semibold text-textPrimary mb-1">Tanggal Berangkat *</label>
             <input
@@ -316,12 +380,11 @@ function handleAddTransport() {
               :min="minDepDate"
               class="h-10 px-3 rounded-xl bg-surfaceCard border border-gray-200 text-xs text-textPrimary focus:outline-none focus:border-primary cursor-pointer"
             />
-            <span class="text-[10px] text-amber-700 font-medium mt-0.5"
-              >Min. 7 hari dari hari ini</span
-            >
+            <span class="text-[10px] text-amber-700 font-medium mt-0.5">
+              Min. 7 hari dari hari ini
+            </span>
           </div>
 
-          <!-- Jam Berangkat -->
           <div class="flex flex-col">
             <label class="text-xs font-semibold text-textPrimary mb-1">Jam Berangkat *</label>
             <input
@@ -331,7 +394,6 @@ function handleAddTransport() {
             />
           </div>
 
-          <!-- Maskapai Pergi (Input Manual) -->
           <div class="flex flex-col sm:col-span-2">
             <label class="text-xs font-semibold text-textPrimary mb-1">Nama Maskapai *</label>
             <input
@@ -342,7 +404,6 @@ function handleAddTransport() {
             />
           </div>
 
-          <!-- Kelas Pergi (4 Opsi) -->
           <div class="flex flex-col sm:col-span-2">
             <label class="text-xs font-semibold text-textPrimary mb-1">Kelas Maskapai *</label>
             <select
@@ -374,14 +435,14 @@ function handleAddTransport() {
             class="text-xs font-bold text-textPrimary font-headline cursor-pointer select-none flex items-center gap-1.5"
           >
             <span>Pulang-Pergi (PP)</span>
-            <span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold"
-              >AKTIF</span
-            >
+            <span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+              AKTIF
+            </span>
           </label>
         </div>
-        <span class="text-[11px] text-textMuted leading-tight"
-          >Rute kembali akan dibuatkan otomatis berlawanan arah</span
-        >
+        <span class="text-[11px] text-textMuted leading-tight">
+          Rute kembali akan dibuatkan otomatis berlawanan arah
+        </span>
       </div>
 
       <div
@@ -389,7 +450,6 @@ function handleAddTransport() {
         class="p-3.5 sm:p-4 rounded-2xl bg-surfaceCanvas/60 border border-gray-100 space-y-3"
       >
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          <!-- Tanggal Pulang -->
           <div class="flex flex-col">
             <label class="text-xs font-semibold text-textPrimary mb-1">Tanggal Pulang *</label>
             <input
@@ -400,7 +460,6 @@ function handleAddTransport() {
             />
           </div>
 
-          <!-- Jam Pulang -->
           <div class="flex flex-col">
             <label class="text-xs font-semibold text-textPrimary mb-1">Jam Pulang *</label>
             <input
@@ -410,7 +469,6 @@ function handleAddTransport() {
             />
           </div>
 
-          <!-- Maskapai Pulang (Input Manual) -->
           <div class="flex flex-col">
             <label class="text-xs font-semibold text-textPrimary mb-1">Maskapai Pulang *</label>
             <input
@@ -421,7 +479,6 @@ function handleAddTransport() {
             />
           </div>
 
-          <!-- Kelas Pulang (4 Opsi) -->
           <div class="flex flex-col">
             <label class="text-xs font-semibold text-textPrimary mb-1">Kelas Pulang *</label>
             <select
@@ -443,18 +500,27 @@ function handleAddTransport() {
       <button
         type="button"
         @click="handleAddTransport"
-        class="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-2xs transition-all active:scale-[0.98]"
+        class="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-2xs transition-all active:scale-[0.98] cursor-pointer"
       >
         <span class="material-symbols-outlined text-[18px]">add_circle</span>
         <span>Tambahkan ke Daftar</span>
       </button>
     </div>
 
-    <!-- Modal Select Traveler LOV -->
+    <!-- Modal LOV (Hanya Dipakai Saat Kategori INTERNAL) -->
     <SelectTravelerModal
       :is-open="isTravelerModalOpen"
       @close="isTravelerModalOpen = false"
       @select="handleTravelerSelected"
+    />
+
+    <!-- Toast Alert Kustom -->
+    <AppToastAlert
+      :is-open="toastInfo.isOpen"
+      :title="toastInfo.title"
+      :message="toastInfo.message"
+      :type="toastInfo.type"
+      @close="toastInfo.isOpen = false"
     />
   </div>
 </template>

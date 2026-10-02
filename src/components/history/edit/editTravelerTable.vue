@@ -67,7 +67,7 @@ function removeTraveler(index: number) {
     >
       <div class="flex items-center justify-between sm:justify-start gap-2">
         <h3 class="text-sm sm:text-base font-bold text-gray-800 font-headline">
-          2. Data Traveller & Itinerary Perjalanan
+          Data Traveller & Itinerary Perjalanan
         </h3>
         <span
           class="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 text-[10px] font-bold uppercase tracking-wider border border-blue-100 shrink-0"

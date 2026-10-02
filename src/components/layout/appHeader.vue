@@ -83,7 +83,7 @@ const userInitials = computed(() => {
           >search</span
         >
         <input
-          v-model="dashboardStore.searchQuery"
+          v-model="dashboardStore.setSearchQuery"
           type="text"
           placeholder="Cari nomor e-TO, kegiatan..."
           class="w-full h-9 pl-9 pr-4 rounded-lg bg-surfaceCanvas text-xs text-textPrimary placeholder:text-textMuted focus:outline-none focus:bg-surfaceCard transition-all border border-transparent focus:border-gray-200"

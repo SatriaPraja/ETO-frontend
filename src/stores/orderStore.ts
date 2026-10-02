@@ -1,9 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type { ExistingTOItem } from '@/models/travelOrder'
+import type { ExistingTOItem, TransportType } from '@/models/travelOrder'
 import { TravelOrderService } from '@/services/travelOrderService'
-
-export type TransportType = 'flight' | 'train' | 'sea' | 'bus' | 'car' | 'hotel'
+export type { TransportType }
 
 // 1. Form Header State
 export interface OrderFormState {
@@ -90,9 +89,9 @@ export const useOrderStore = defineStore('order', () => {
   const isTransportAdded = ref<boolean>(false)
   const isSubmitting = ref<boolean>(false)
 
-  // 🟢 Draf Info State (Dinamis Sesuai Store)
+  // Draf Info State
   const lastSavedTime = ref<string>('Diperbarui baru saja')
-  
+
   const draftCode = computed(() => {
     if (formInfo.value.existingToOption || formInfo.value.toCode) {
       return formInfo.value.existingToOption || formInfo.value.toCode
@@ -170,23 +169,11 @@ export const useOrderStore = defineStore('order', () => {
     errorMessage.value = ''
 
     try {
-      const params = new URLSearchParams()
-      if (searchQuery.value) params.append('search', searchQuery.value)
-      if (selectedStatusFilter.value !== 'ALL') params.append('status', selectedStatusFilter.value)
-
-      const response = await fetch(`/api/travel-orders/existing?${params.toString()}`, {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token') || ''}`,
-        },
+      const data = await TravelOrderService.fetchExistingOrders({
+        search: searchQuery.value,
+        status: selectedStatusFilter.value,
       })
-
-      const resData = await response.json()
-      if (!response.ok || !resData.success) {
-        throw new Error(resData.message || 'Gagal memuat daftar Travel Order Existing.')
-      }
-
-      existingOrders.value = resData.data
+      existingOrders.value = data
     } catch (err: any) {
       errorMessage.value = err.message || 'Terjadi kesalahan koneksi.'
     } finally {
@@ -200,10 +187,10 @@ export const useOrderStore = defineStore('order', () => {
   }
 
   // Auto-fill dari Modal Pilih TO Existing
-  function selectExistingTO(toItem: any) {
+  function selectExistingTO(toItem: ExistingTOItem) {
     formInfo.value.existingToOption = toItem.toCode
     formInfo.value.toCode = toItem.toCode
-    formInfo.value.activityName = toItem.title || toItem.activityName
+    formInfo.value.activityName = toItem.title
     formInfo.value.unitKerjaKode = toItem.unitKerjaKode || ''
     formInfo.value.unitKerjaNama = toItem.unitKerja
     formInfo.value.programKerja = toItem.programKerja || ''
@@ -236,7 +223,6 @@ export const useOrderStore = defineStore('order', () => {
     }
   }
 
-  // Actions Manajemen Hotel
   function addHotel(item: Omit<HotelItem, 'id'>) {
     const newHotel: HotelItem = {
       ...item,
@@ -250,7 +236,6 @@ export const useOrderStore = defineStore('order', () => {
     hotels.value = hotels.value.filter((h) => h.id !== id)
   }
 
-  // Action Update Alokasi Tamu/Penginap per Hotel
   function updateHotelGuests(hotelId: string, guestsList: HotelGuestItem[]) {
     const targetHotel = hotels.value.find((h) => h.id === hotelId)
     if (targetHotel) {
@@ -258,53 +243,116 @@ export const useOrderStore = defineStore('order', () => {
     }
   }
 
-  // Submit Tahap 1: Create Flight Order
-  async function submitFlightOrder() {
-    if (travellers.value.length === 0) {
-      throw new Error('Mohon tambahkan minimal 1 personel / traveller penerbangan terlebih dahulu.')
+  // 🟢 ACTION 1: BUAT HEADER TRAVEL ORDER STANDALONE
+  async function submitTravelOrderHeader() {
+    if (
+      !formInfo.value.activityName ||
+      !formInfo.value.sprinNumber ||
+      !formInfo.value.sprinDetail
+    ) {
+      throw new Error('Mohon lengkapi Informasi Kegiatan dan Surat Perintah terlebih dahulu.')
+    }
+    if (!formInfo.value.approverId || !formInfo.value.budgetId) {
+      throw new Error('Pejabat Penyetuju dan Mata Anggaran wajib dipilih.')
     }
 
     isSubmitting.value = true
     try {
       const payload = {
-        existingToOption: formInfo.value.existingToOption || null,
         toCode: formInfo.value.toCode || null,
         activityName: formInfo.value.activityName,
         unitKerjaKode: formInfo.value.unitKerjaKode || null,
         unitKerjaNama: formInfo.value.unitKerjaNama || null,
         programKerja: formInfo.value.programKerja || null,
-        approverNama: formInfo.value.approverNama || null,
-        approverId: formInfo.value.approverId || null,
-        budgetAccount: formInfo.value.budgetAccount || null,
-        budgetId: formInfo.value.budgetId || null,
+        approverId: formInfo.value.approverId,
+        budgetId: formInfo.value.budgetId,
         sprinNumber: formInfo.value.sprinNumber,
         sprinDetail: formInfo.value.sprinDetail,
         notes: formInfo.value.notes || null,
-        travellers: travellers.value as any[],
       }
 
-      const res = await TravelOrderService.submitFlightOrder(payload)
+      const res = await TravelOrderService.createTravelOrderHeader(payload)
 
-      if (res.data?.toCode) {
-        formInfo.value.existingToOption = res.data.toCode
-        formInfo.value.toCode = res.data.toCode
+      if (res.data?.to_code) {
+        formInfo.value.existingToOption = res.data.to_code
+        formInfo.value.toCode = res.data.to_code
       }
 
       isTransportAdded.value = true
-      activeTransport.value = 'hotel'
-
       return res
     } finally {
       isSubmitting.value = false
     }
   }
 
-  // Submit Tahap 2: Add Hotel to Existing TO
+  // 🟢 ACTION 2: TAMBAH TRANSPORTASI KE TRAVEL ORDER EXISTING
+  async function submitTransportOrder() {
+    const targetToCode = formInfo.value.existingToOption || formInfo.value.toCode
+
+    if (!targetToCode) {
+      throw new Error(
+        'Mohon pilih/buat Travel Order Existing terlebih dahulu sebelum menambahkan transportasi.',
+      )
+    }
+
+    if (travellers.value.length === 0) {
+      throw new Error(
+        'Mohon tambahkan minimal 1 personel / traveller transportasi terlebih dahulu.',
+      )
+    }
+
+    isSubmitting.value = true
+    try {
+      const payload = {
+        travelOrderId: targetToCode,
+        travellers: travellers.value.map((t) => ({
+          category: t.category,
+          transportType: t.transportType || activeTransport.value,
+          userId: t.userId || null,
+          name: t.name,
+          npkOrKtp: t.npkOrKtp || null,
+          jabatanOrInstansi: t.jabatanOrInstansi || null,
+          phone: t.phone,
+          route: t.route || null,
+          originCityId: t.originCityId || null,
+          destinationCityId: t.destinationCityId || null,
+          departureDate: t.departureDate,
+          departureTime: t.departureTime,
+          departureInfo: t.departureInfo || null,
+          maskapai: t.maskapai || null,
+          kelas: t.kelas || null,
+          transportId: t.transportId || null,
+          transportClassId: t.transportClassId || null,
+          isRoundTrip: t.isRoundTrip,
+          returnDate: t.returnDate || null,
+          returnTime: t.returnTime || null,
+          returnInfo: t.returnInfo || null,
+          returnMaskapai: t.returnMaskapai || null,
+          returnKelas: t.returnKelas || null,
+          returnTransportId: t.returnTransportId || null,
+          returnTransportClassId: t.returnTransportClassId || null,
+          price: t.price || 0,
+        })),
+      }
+
+      const res = await TravelOrderService.addTransportOrder(payload)
+      activeTransport.value = 'hotel'
+      return res
+    } finally {
+      isSubmitting.value = false
+    }
+  }
+
+  // 🟢 ACTION 3: TAMBAH HOTEL KE TRAVEL ORDER EXISTING
   async function submitHotelOrder() {
     const targetToCode = formInfo.value.existingToOption || formInfo.value.toCode
 
     if (!targetToCode) {
       throw new Error('Kode Travel Order Existing wajib dipilih untuk memesan hotel.')
+    }
+
+    if (hotels.value.length === 0) {
+      throw new Error('Mohon tambahkan minimal 1 reservasi hotel terlebih dahulu.')
     }
 
     isSubmitting.value = true
@@ -316,14 +364,14 @@ export const useOrderStore = defineStore('order', () => {
         roomCount: hotel.roomCount,
         checkInDate: hotel.checkInDate,
         checkOutDate: hotel.checkOutDate,
-        durationNights: hotel.durationNights, 
+        durationNights: hotel.durationNights,
         pricePerNight: hotel.pricePerNight,
         subtotalPrice: hotel.subtotalPrice,
         guests: (hotel.guests || [])
           .filter((g) => g.isFilled || g.guestName)
           .map((g) => ({
             roomNumber: g.roomNumber,
-            bedSlot: g.bedSlot.split(' ')[0] + ' ' + (g.bedSlot.split(' ')[1] || 'A'),
+            bedSlot: g.bedSlot,
             category: g.category || 'INTERNAL',
             userId: g.userId || null,
             guestName: g.guestName,
@@ -333,24 +381,12 @@ export const useOrderStore = defineStore('order', () => {
           })),
       }))
 
-      const response = await fetch('/api/travel-orders/hotel', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token') || ''}`,
-        },
-        body: JSON.stringify({
-          travelOrderId: targetToCode,
-          hotels: cleanHotelsPayload,
-        }),
+      const res = await TravelOrderService.addHotelOrder({
+        travelOrderId: targetToCode,
+        hotels: cleanHotelsPayload,
       })
 
-      const resData = await response.json()
-      if (!response.ok || !resData.success) {
-        throw new Error(resData.message || 'Gagal menambahkan reservasi hotel.')
-      }
-
-      return resData
+      return res
     } finally {
       isSubmitting.value = false
     }
@@ -409,7 +445,8 @@ export const useOrderStore = defineStore('order', () => {
     addHotel,
     removeHotel,
     updateHotelGuests,
-    submitFlightOrder,
+    submitTravelOrderHeader,
+    submitTransportOrder,
     submitHotelOrder,
     resetForm,
   }

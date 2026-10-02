@@ -142,7 +142,7 @@ function handleGuestsSaved() {
           class="text-sm sm:text-base font-bold text-textPrimary font-headline flex items-center gap-2"
         >
           <span class="material-symbols-outlined text-[#930049] text-[20px]">hotel</span>
-          <span>2. Data Hotel & Detail Kamar</span>
+          <span>Data Hotel & Detail Kamar</span>
           <span
             class="px-2 py-0.5 rounded bg-[#930049] text-white text-[10px] font-bold uppercase tracking-wider shrink-0"
           >
