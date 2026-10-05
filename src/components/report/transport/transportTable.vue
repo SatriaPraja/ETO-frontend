@@ -1,9 +1,16 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useReportStore } from '@/stores/reportStore'
 
 const reportStore = useReportStore()
 const activeTab = ref<'INTERNAL' | 'EKSTERNAL'>('INTERNAL')
+
+// 🟢 Load data awal saat komponen pertama kali dipasang
+onMounted(() => {
+  reportStore.transportFilters.category = activeTab.value
+  reportStore.transportFilters.page = 1
+  reportStore.fetchTransportReport()
+})
 
 function switchTab(cat: 'INTERNAL' | 'EKSTERNAL') {
   activeTab.value = cat
@@ -28,9 +35,13 @@ function handleLimitChange(e: Event) {
 </script>
 
 <template>
-  <div class="bg-surfaceCard rounded-xl border border-gray-100 shadow-2xs font-body overflow-hidden space-y-0">
+  <div
+    class="bg-surfaceCard rounded-xl border border-gray-100 shadow-2xs font-body overflow-hidden space-y-0"
+  >
     <!-- Header Tabs Filter -->
-    <div class="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100">
+    <div
+      class="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100"
+    >
       <div class="flex items-center gap-2">
         <button
           type="button"
@@ -39,13 +50,20 @@ function handleLimitChange(e: Event) {
             'px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer',
             activeTab === 'INTERNAL'
               ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-              : 'text-textMuted hover:bg-surfaceCanvas'
+              : 'text-textMuted hover:bg-surfaceCanvas',
           ]"
         >
           <span class="material-symbols-outlined text-[16px]">badge</span>
           <span>Traveller Internal BPJS TK</span>
-          <span class="px-1.5 py-0.2 rounded-full bg-emerald-800 text-white text-[10px]">
-            {{ reportStore.transportStats.internalBPJS }}
+          <span
+            :class="[
+              'px-1.5 py-0.2 rounded-full text-[10px] font-bold transition-colors',
+              activeTab === 'INTERNAL'
+                ? 'bg-emerald-800 text-white'
+                : 'bg-surfaceCanvas text-textMuted',
+            ]"
+          >
+            {{ reportStore.transportStats?.internalBPJS ?? 0 }}
           </span>
         </button>
 
@@ -56,13 +74,20 @@ function handleLimitChange(e: Event) {
             'px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer',
             activeTab === 'EKSTERNAL'
               ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-              : 'text-textMuted hover:bg-surfaceCanvas'
+              : 'text-textMuted hover:bg-surfaceCanvas',
           ]"
         >
           <span class="material-symbols-outlined text-[16px]">person_add</span>
           <span>Traveller Eksternal / Tamu</span>
-          <span class="px-1.5 py-0.2 rounded-full bg-surfaceCanvas text-textMuted text-[10px]">
-            {{ reportStore.transportStats.eksternalTamu }}
+          <span
+            :class="[
+              'px-1.5 py-0.2 rounded-full text-[10px] font-bold transition-colors',
+              activeTab === 'EKSTERNAL'
+                ? 'bg-emerald-800 text-white'
+                : 'bg-surfaceCanvas text-textMuted',
+            ]"
+          >
+            {{ reportStore.transportStats?.eksternalTamu ?? 0 }}
           </span>
         </button>
       </div>
@@ -81,7 +106,10 @@ function handleLimitChange(e: Event) {
     <!-- Data Table Container -->
     <div class="overflow-x-auto relative">
       <!-- Loading Overlay -->
-      <div v-if="reportStore.isTransportLoading" class="absolute inset-0 bg-white/70 backdrop-blur-xs flex items-center justify-center z-10">
+      <div
+        v-if="reportStore.isTransportLoading"
+        class="absolute inset-0 bg-white/70 backdrop-blur-xs flex items-center justify-center z-10"
+      >
         <span class="text-xs font-bold text-emerald-800 flex items-center gap-2">
           <span class="material-symbols-outlined animate-spin">sync</span>
           Memuat data transportasi...
@@ -89,7 +117,9 @@ function handleLimitChange(e: Event) {
       </div>
 
       <table class="w-full text-left text-xs">
-        <thead class="bg-surfaceCanvas text-textMuted font-semibold uppercase text-[10px] tracking-wider border-b border-gray-100">
+        <thead
+          class="bg-surfaceCanvas text-textMuted font-semibold uppercase text-[10px] tracking-wider border-b border-gray-100"
+        >
           <tr>
             <th class="p-3 text-center w-10">NO</th>
             <th class="p-3">TGL REKAM</th>
@@ -113,20 +143,29 @@ function handleLimitChange(e: Event) {
             class="hover:bg-surfaceCanvas/50 transition-colors"
           >
             <td class="p-3 text-center text-textMuted font-bold">
-              {{ ((reportStore.transportFilters.page || 1) - 1) * (reportStore.transportFilters.limit || 10) + index + 1 }}
+              {{
+                ((reportStore.transportFilters.page || 1) - 1) *
+                  (reportStore.transportFilters.limit || 10) +
+                index +
+                1
+              }}
             </td>
             <td class="p-3 text-textMuted font-medium">{{ item.tglRekam }}</td>
             <td class="p-3 font-bold text-emerald-800 font-headline">{{ item.toCode }}</td>
             <td class="p-3">
               <div class="flex flex-col">
-                <strong class="font-bold text-textPrimary font-headline">{{ item.guestName }}</strong>
+                <strong class="font-bold text-textPrimary font-headline">{{
+                  item.guestName
+                }}</strong>
                 <span class="text-[10px] text-textMuted">
                   NPK: {{ item.npkOrKtp || '-' }} {{ item.jabatan ? `• ${item.jabatan}` : '' }}
                 </span>
               </div>
             </td>
             <td class="p-3">
-              <span class="font-extrabold text-textPrimary font-headline">{{ item.routeInfo }}</span>
+              <span class="font-extrabold text-textPrimary font-headline">{{
+                item.routeInfo
+              }}</span>
             </td>
             <td class="p-3">
               <div class="flex flex-col">
@@ -138,14 +177,22 @@ function handleLimitChange(e: Event) {
             </td>
             <td class="p-3">
               <div class="flex items-center gap-2">
-                <div v-if="item.transportType === 'flight'" class="w-6 h-6 rounded bg-sky-500 text-white flex items-center justify-center shrink-0">
+                <div
+                  v-if="item.transportType === 'flight'"
+                  class="w-6 h-6 rounded bg-sky-500 text-white flex items-center justify-center shrink-0"
+                >
                   <span class="material-symbols-outlined text-[14px]">flight</span>
                 </div>
-                <div v-else class="w-6 h-6 rounded bg-orange-500 text-white flex items-center justify-center shrink-0">
+                <div
+                  v-else
+                  class="w-6 h-6 rounded bg-orange-500 text-white flex items-center justify-center shrink-0"
+                >
                   <span class="material-symbols-outlined text-[14px]">train</span>
                 </div>
                 <div class="flex flex-col">
-                  <strong class="font-bold text-textPrimary">{{ item.maskapai || 'Transport' }}</strong>
+                  <strong class="font-bold text-textPrimary">{{
+                    item.maskapai || 'Transport'
+                  }}</strong>
                   <span class="text-[10px] text-textMuted">{{ item.transportType }}</span>
                 </div>
               </div>
@@ -156,9 +203,15 @@ function handleLimitChange(e: Event) {
     </div>
 
     <!-- Table Pagination Footer -->
-    <div class="p-4 bg-surfaceCanvas/40 border-t border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-textMuted">
+    <div
+      class="p-4 bg-surfaceCanvas/40 border-t border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-textMuted"
+    >
       <span>
-        Menampilkan <strong>{{ reportStore.transportTransactions.length > 0 ? 1 : 0 }} - {{ reportStore.transportTransactions.length }}</strong>
+        Menampilkan
+        <strong
+          >{{ reportStore.transportTransactions.length > 0 ? 1 : 0 }} -
+          {{ reportStore.transportTransactions.length }}</strong
+        >
         dari <strong>{{ reportStore.transportTotalData }}</strong> data perjalanan dinas
       </span>
 
@@ -193,7 +246,7 @@ function handleLimitChange(e: Event) {
               'w-7 h-7 rounded text-xs font-bold flex items-center justify-center transition-colors cursor-pointer',
               p === reportStore.transportFilters.page
                 ? 'bg-emerald-800 text-white'
-                : 'border border-gray-200 bg-surfaceCard text-textPrimary hover:bg-gray-100'
+                : 'border border-gray-200 bg-surfaceCard text-textPrimary hover:bg-gray-100',
             ]"
           >
             {{ p }}

@@ -103,19 +103,61 @@ export const useReportStore = defineStore('report', () => {
   }
 
   /**
-   * Fetch Data Laporan Transportasi
+   * 🟢 Fetch Statistik Global Transportasi (Tanpa Filter Kategori)
+   * Mengambil jumlah total akumulatif Internal & Eksternal agar badge di tab tidak pernah 0.
+   */
+  async function fetchTransportGlobalStats(): Promise<void> {
+    try {
+      // Salin filter saat ini tanpa membawa parameter category
+      const globalParams: ReportTransportQueryParams = {
+        ...transportFilters.value,
+        category: undefined,
+      }
+      const response = await reportService.getTransportReport(globalParams)
+      if (response && response.data && response.data.stats) {
+        transportStats.value.internalBPJS = response.data.stats.internalBPJS || 0
+        transportStats.value.eksternalTamu = response.data.stats.eksternalTamu || 0
+        transportStats.value.totalPengajuan = response.data.stats.totalPengajuan || 0
+        transportStats.value.realisasiAnggaran = response.data.stats.realisasiAnggaran || 0
+      }
+    } catch (error) {
+      console.error('Gagal memuat statistik global transportasi:', error)
+    }
+  }
+
+  /**
+   * Fetch Data Laporan Transportasi (Tabel & Analytics)
    */
   async function fetchTransportReport(): Promise<void> {
     isTransportLoading.value = true
     try {
       const response = await reportService.getTransportReport(transportFilters.value)
       if (response && response.data) {
-        transportStats.value = response.data.stats
+        // Ambil data tabel & analitik
         transportCompositions.value = response.data.analytics.compositions
         transportTopCorridors.value = response.data.analytics.topCorridors
         transportTransactions.value = response.data.transactions
         transportTotalData.value = response.data.pagination.totalData
         transportTotalPages.value = response.data.pagination.totalPages
+
+        // 🟢 Update statistik secara selektif agar nilai tab lain tidak terhapus / menjadi 0
+        if (response.data.stats) {
+          const newStats = response.data.stats
+
+          // Jika tidak ada filter kategori, update semuanya
+          if (!transportFilters.value.category) {
+            transportStats.value = newStats
+          } else {
+            // Jika sedang difilter berdasarkan tab tertentu, update nilai tab aktif
+            // dan pertahankan nilai tab lawan jika respon API bernilai 0
+            if (transportFilters.value.category === 'INTERNAL') {
+              transportStats.value.internalBPJS = newStats.internalBPJS || transportTotalData.value
+            } else if (transportFilters.value.category === 'EKSTERNAL') {
+              transportStats.value.eksternalTamu =
+                newStats.eksternalTamu || transportTotalData.value
+            }
+          }
+        }
       }
     } catch (error) {
       console.error('Gagal memuat laporan transportasi:', error)
@@ -160,6 +202,7 @@ export const useReportStore = defineStore('report', () => {
       limit: 10,
     }
     await fetchTransportReport()
+    await fetchTransportGlobalStats()
   }
 
   return {
@@ -183,6 +226,7 @@ export const useReportStore = defineStore('report', () => {
     transportTotalPages,
     isTransportLoading,
     fetchTransportReport,
+    fetchTransportGlobalStats,
     resetTransportFilters,
   }
 })

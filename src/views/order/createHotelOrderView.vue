@@ -56,6 +56,21 @@ function handleOpenConfirmModal() {
     return
   }
 
+  // 🟢 CEK APAKAH ADA HOTEL YANG PENGINAPNYA MASIH 0 / KOSONG
+  const emptyGuestHotel = orderStore.hotels.find((hotel) => {
+    const filledGuests = (hotel.guests || []).filter((g) => g.isFilled || g.guestName)
+    return filledGuests.length === 0
+  })
+
+  if (emptyGuestHotel) {
+    showToast(
+      `Hotel "${emptyGuestHotel.hotelNameCustom}" belum memiliki data penginap. Silakan klik tombol "Isi Data Penginap".`,
+      'Data Penginap Kosong',
+      'error',
+    )
+    return
+  }
+
   isConfirmModalOpen.value = true
 }
 

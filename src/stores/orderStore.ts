@@ -342,7 +342,6 @@ export const useOrderStore = defineStore('order', () => {
       isSubmitting.value = false
     }
   }
-
   // 🟢 ACTION 3: TAMBAH HOTEL KE TRAVEL ORDER EXISTING
   async function submitHotelOrder() {
     const targetToCode = formInfo.value.existingToOption || formInfo.value.toCode
@@ -353,6 +352,16 @@ export const useOrderStore = defineStore('order', () => {
 
     if (hotels.value.length === 0) {
       throw new Error('Mohon tambahkan minimal 1 reservasi hotel terlebih dahulu.')
+    }
+
+    // 🟢 VALIDASI BARU: Cek apakah ada hotel yang data penginapnya masih kosong
+    for (const [index, hotel] of hotels.value.entries()) {
+      const validGuests = (hotel.guests || []).filter((g) => g.isFilled || g.guestName)
+      if (validGuests.length === 0) {
+        throw new Error(
+          `Hotel ke-${index + 1} (${hotel.hotelNameCustom}) belum memiliki data penginap/tamu. Silakan klik "Isi Data Penginap" terlebih dahulu.`,
+        )
+      }
     }
 
     isSubmitting.value = true
