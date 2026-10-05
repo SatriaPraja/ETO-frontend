@@ -19,7 +19,9 @@ function handleSearch() {
 function getStatusBadge(status: DashboardQueryParams['status']) {
   switch (status) {
     case 'WAITING_PEJABAT':
-      return { label: 'Menunggu Persetujuan', bg: 'bg-blue-50 text-blue-600', dot: 'bg-blue-600' }
+      return { label: 'Menunggu Pejabat', bg: 'bg-blue-50 text-blue-600', dot: 'bg-blue-600' }
+    case 'WAITING_ADMINTRAVEL':
+      return { label: 'Menunggu Admin Travel', bg: 'bg-blue-50 text-blue-600', dot: 'bg-blue-600' }
     case 'APPROVED':
       return { label: 'Disetujui', bg: 'bg-green-50 text-emerald-600', dot: 'bg-emerald-600' }
     case 'RETURNED':

@@ -15,7 +15,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="p-6 space-y-6 max-w-7xl mx-auto font-body bg-gray-50/30 min-h-screen">
+  <div class="space-y-6 pb-12 font-body w-full max-w-full overflow-x-hidden">
     <!-- Header Page -->
     <transportHeader />
 

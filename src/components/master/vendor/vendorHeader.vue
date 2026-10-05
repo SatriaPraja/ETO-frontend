@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
+import AppBreadcrumb from '@/components/layout/appBreadcrumb.vue'
 
 const router = useRouter()
 
@@ -15,13 +16,7 @@ function handleExportData() {
 <template>
   <div class="space-y-4 font-body">
     <!-- Breadcrumb -->
-    <div class="flex items-center gap-1.5 text-xs text-textMuted">
-      <router-link to="/dashboard" class="hover:underline">Beranda</router-link>
-      <span>›</span>
-      <span>Data Master</span>
-      <span>›</span>
-      <strong class="text-textPrimary font-semibold">Maskapai & Vendor</strong>
-    </div>
+    <AppBreadcrumb />
 
     <!-- Header Title & Action Buttons -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">

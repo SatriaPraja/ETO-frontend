@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useReportStore } from '@/stores/reportStore'
+import AppBreadcrumb from '@/components/layout/appBreadcrumb.vue'
 
 const reportStore = useReportStore()
 
@@ -15,13 +16,7 @@ function handleExportExcel() {
 <template>
   <div class="space-y-4 font-body">
     <!-- Breadcrumb -->
-    <div class="flex items-center gap-1.5 text-xs text-textMuted">
-      <router-link to="/dashboard" class="hover:underline">BERANDA</router-link>
-      <span>›</span>
-      <router-link to="/reports" class="hover:underline">LAPORAN</router-link>
-      <span>›</span>
-      <strong class="text-textPrimary font-semibold uppercase">TRANSPORTASI</strong>
-    </div>
+    <AppBreadcrumb />
 
     <!-- Header Content & Action Buttons -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">

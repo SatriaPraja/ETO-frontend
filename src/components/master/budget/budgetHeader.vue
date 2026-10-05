@@ -1,5 +1,6 @@
 <script setup lang="ts">
 const emit = defineEmits(['open-modal'])
+import AppBreadcrumb from '@/components/layout/appBreadcrumb.vue'
 
 function handleDownloadRekap() {
   alert('Mengunduh Rekap Mata Anggaran & Alokasi Pagu (.xlsx)...')
@@ -10,11 +11,7 @@ function handleDownloadRekap() {
   <div class="space-y-4 font-body">
     <!-- Breadcrumb -->
     <div class="flex items-center gap-1.5 text-xs text-textMuted flex-wrap">
-      <router-link to="/dashboard" class="hover:underline">Beranda</router-link>
-      <span>›</span>
-      <span>Data Master</span>
-      <span>›</span>
-      <strong class="text-textPrimary font-semibold">Mata Anggaran (COA)</strong>
+     <AppBreadcrumb />
     </div>
 
     <!-- Title & Action Buttons -->

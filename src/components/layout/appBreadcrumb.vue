@@ -38,7 +38,7 @@ const dynamicTransportLabel = computed(() => {
   }
 })
 
-// Generator Breadcrumb: Hanya menampilkan Beranda & Halaman Tujuan (tanpa label kategori perantara)
+// Generator Breadcrumb
 const breadcrumbItems = computed<BreadcrumbItem[]>(() => {
   if (props.items && props.items.length > 0) {
     return props.items
@@ -59,14 +59,34 @@ const breadcrumbItems = computed<BreadcrumbItem[]>(() => {
     }
   } else if (route.path.startsWith('/approvals')) {
     list.push({ label: 'Inbox Persetujuan' })
-  } else if (route.path.startsWith('/reports')) {
-    list.push({ label: 'Laporan Eksekutif' })
-  } else if (route.path.startsWith('/master')) {
-    list.push({ label: 'Administrasi Master' })
+  }
+  // 🟢 LAPORAN EKSEKUTIF
+  else if (route.path.startsWith('/reports')) {
+    if (route.path === '/reports') {
+      list.push({ label: 'Laporan Eksekutif' })
+    } else {
+      list.push({ label: 'Laporan Eksekutif', path: '/reports' })
+      if (route.path.startsWith('/reports/hotel')) {
+        list.push({ label: 'Hotel & Akomodasi' })
+      } else if (route.path.startsWith('/reports/transport')) {
+        list.push({ label: 'Transportasi' })
+      }
+    }
+  }
+  // 🟢 ADMINISTRASI MASTER (LANGSUNG KE SUB-HALAMAN)
+  else if (route.path.startsWith('/master')) {
+    if (route.path.startsWith('/master/vendors')) {
+      list.push({ label: 'Maskapai & Vendor' })
+    } else if (route.path.startsWith('/master/cities-airports')) {
+      list.push({ label: 'Kota & Bandara' })
+    } else if (route.path.startsWith('/master/budget')) {
+      list.push({ label: 'Mata Anggaran (MAK)' })
+    } else {
+      list.push({ label: 'Administrasi Master' })
+    }
   } else if (route.path.startsWith('/users')) {
     list.push({ label: 'Kelola User & Role' })
   }
-
   return list
 })
 
@@ -79,48 +99,50 @@ function navigateTo(path?: string) {
 
 <template>
   <div
-    class="flex flex-col sm:flex-row sm:items-center justify-between text-xs text-textMuted gap-2 font-body"
+    class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-textMuted font-body"
   >
-    <!-- Navigasi Breadcrumbs -->
-    <div class="flex items-center gap-1.5 flex-wrap">
+    <!-- Breadcrumb sejajar 1 baris -->
+    <div class="flex items-center gap-1.5 whitespace-nowrap overflow-x-auto no-scrollbar py-0.5">
       <template v-for="(item, index) in breadcrumbItems" :key="index">
         <button
           type="button"
           @click="navigateTo(item.path)"
           :disabled="!item.path || index === breadcrumbItems.length - 1"
           :class="[
-            'transition-colors font-medium',
+            'transition-colors inline-flex items-center',
             item.path && index !== breadcrumbItems.length - 1
               ? 'hover:text-primary cursor-pointer text-textMuted'
-              : 'text-textPrimary font-bold cursor-default',
+              : 'text-textPrimary font-semibold cursor-default',
           ]"
         >
           <span>{{ item.label }}</span>
         </button>
 
-        <!-- Pemisah ikon chevron HANYA dirender jika BUKAN item terakhir -->
+        <!-- Pemisah '›' -->
         <span
           v-if="index < breadcrumbItems.length - 1"
-          class="material-symbols-outlined text-[15px] text-textMuted/60 select-none"
+          class="text-textMuted/60 select-none px-0.5"
         >
-          chevron_right
+          ›
         </span>
       </template>
     </div>
 
-    <!-- Status Draf Aktif -->
+    <!-- Status Draf Aktif (Rapi di Kanan) -->
     <div
       v-if="showDraftStatus || route.path.includes('create-')"
-      class="flex items-center gap-2 shrink-0"
+      class="flex items-center gap-1.5 shrink-0 text-xs whitespace-nowrap"
     >
-      <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+      <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse shrink-0"></span>
       <span class="text-[11px]">
         Status:
         <strong class="text-textPrimary font-semibold"
           >Sesi Draf Aktif: {{ orderStore.draftCode }}</strong
         >
       </span>
-      <span class="text-[10px] text-textMuted">({{ orderStore.lastSavedTime }})</span>
+      <span class="text-[10px] text-textMuted hidden md:inline"
+        >({{ orderStore.lastSavedTime }})</span
+      >
     </div>
   </div>
 </template>

@@ -3,11 +3,14 @@ import ApprovalHeader from '@/components/approval/approvalHeader.vue'
 import ApprovalListPanel from '@/components/approval/approvalListPanel.vue'
 import ApprovalDetailPanel from '@/components/approval/approvalDetailPanel.vue'
 import ApprovalActionFooter from '@/components/approval/approvalActionFooter.vue'
+import AppBreadcrumb from '@/components/layout/appBreadcrumb.vue'
 </script>
 
 <template>
   <div class="space-y-5 pb-12 font-body w-full max-w-full overflow-x-hidden">
     <!-- Header Section -->
+
+    <AppBreadcrumb />
     <ApprovalHeader />
 
     <!-- Split 2-Column Layout (List Left + Detail Right) -->

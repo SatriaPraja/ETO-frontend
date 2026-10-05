@@ -1,5 +1,6 @@
 <script setup lang="ts">
 const emit = defineEmits(['open-modal'])
+import AppBreadcrumb from '@/components/layout/appBreadcrumb.vue'
 
 function handleExportData() {
   alert('Mengunduh data Master Kota & Bandara (.xlsx)...')
@@ -10,11 +11,7 @@ function handleExportData() {
   <div class="space-y-4 font-body">
     <!-- Breadcrumb -->
     <div class="flex items-center gap-1.5 text-xs text-textMuted">
-      <router-link to="/dashboard" class="hover:underline">Beranda</router-link>
-      <span>›</span>
-      <span>Data Master</span>
-      <span>›</span>
-      <strong class="text-textPrimary font-semibold">Kota & Bandara</strong>
+      <AppBreadcrumb />
     </div>
 
     <!-- Header Title & Action Buttons -->
@@ -24,7 +21,8 @@ function handleExportData() {
           Master Kota & Bandara (IATA)
         </h1>
         <p class="text-xs text-textMuted mt-1">
-          Kelola lokasi tujuan dinas, kode unik bandara IATA, serta pemetaan provinsi wilayah operasional.
+          Kelola lokasi tujuan dinas, kode unik bandara IATA, serta pemetaan provinsi wilayah
+          operasional.
         </p>
       </div>
 

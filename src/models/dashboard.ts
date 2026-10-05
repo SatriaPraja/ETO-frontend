@@ -1,7 +1,14 @@
 // Query Parameters untuk Pengajuan Terakhir & Filtering Dashboard
 export interface DashboardQueryParams {
   search?: string
-  status?: 'ALL' | 'WAITING_PEJABAT' | 'APPROVED' | 'RETURNED' | 'REJECTED' | 'CANCELLED'
+  status?:
+    | 'ALL'
+    | 'WAITING_PEJABAT'
+    | 'WAITING_ADMINTRAVEL'
+    | 'APPROVED'
+    | 'RETURNED'
+    | 'REJECTED'
+    | 'CANCELLED'
   limit?: number
   page?: number
   monthYear?: string // Format YYYY-MM
@@ -42,7 +49,8 @@ export interface RecentOrderItem {
   unitKerjaKode: string
   unitKerjaNama: string
   orderDate: string
-  status: 'WAITING_PEJABAT' | 'APPROVED' | 'RETURNED' | 'REJECTED' | 'CANCELLED'
+  status:
+    'WAITING_PEJABAT' | 'WAITING_ADMINTRAVEL' | 'APPROVED' | 'RETURNED' | 'REJECTED' | 'CANCELLED'
   totalEstimatedCost: number
   createdAt: string
   totalTravellers: number

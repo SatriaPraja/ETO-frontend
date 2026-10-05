@@ -93,9 +93,7 @@ function handleLimitChange(e: Event) {
             </td>
             <td class="p-3.5">
               <div class="flex items-center gap-2">
-                <span class="w-6 h-6 rounded bg-pink-50 text-[#930049] flex items-center justify-center shrink-0">
-                  <span class="material-symbols-outlined text-[15px]">hotel</span>
-                </span>
+               
                 <div class="flex flex-col">
                   <span class="font-bold text-textPrimary font-headline text-xs">{{ item.hotelName }}</span>
                   <span v-if="item.starRating" class="text-[10px] text-amber-500 font-semibold">

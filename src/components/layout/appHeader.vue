@@ -68,7 +68,7 @@ const userInitials = computed(() => {
         <span class="material-symbols-outlined text-[24px]">menu</span>
       </button>
 
-      <!-- Breadcrumb (Disembunyikan pada layar mobile kecil) -->
+      <!-- Breadcrumb -->
       <div class="hidden md:flex items-center gap-1.5 text-xs text-textMuted font-body shrink-0">
         <span class="hover:text-primary cursor-pointer">e-TO</span>
         <span class="material-symbols-outlined text-[16px]">chevron_right</span>
@@ -77,13 +77,14 @@ const userInitials = computed(() => {
         >
       </div>
 
-      <!-- Search Input -->
+      <!-- Search Input (PERBAIKAN VALUE DI SINI) -->
       <div class="relative w-full max-w-xs hidden xl:block shrink min-w-[180px]">
         <span class="material-symbols-outlined absolute left-3 top-2.5 text-textMuted text-[18px]"
           >search</span
         >
         <input
-          v-model="dashboardStore.setSearchQuery"
+          :value="dashboardStore.filters.search"
+          @input="(e) => dashboardStore.setSearchQuery((e.target as HTMLInputElement).value)"
           type="text"
           placeholder="Cari nomor e-TO, kegiatan..."
           class="w-full h-9 pl-9 pr-4 rounded-lg bg-surfaceCanvas text-xs text-textPrimary placeholder:text-textMuted focus:outline-none focus:bg-surfaceCard transition-all border border-transparent focus:border-gray-200"
