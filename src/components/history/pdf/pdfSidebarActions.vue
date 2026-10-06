@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import type { TravelOrderDetail } from '@/models/historyDetail'
+import { generateTravelOrderPdf } from '@/services/pdfTemplateService'
 
 const props = defineProps<{
   detail: TravelOrderDetail
 }>()
 
 const isSendingEmail = ref(false)
+const isDownloading = ref(false)
 
 function formatDateTime(dateStr?: string) {
   if (!dateStr) return '-'
@@ -19,18 +21,28 @@ function formatDateTime(dateStr?: string) {
   })
 }
 
-function handleDownload() {
-  window.print()
+// 🟢 UNDUH DOKUMEN PDF DENGAN TEMPLATE DIPISAH
+async function handleDownload() {
+  try {
+    isDownloading.value = true
+    generateTravelOrderPdf(props.detail)
+  } catch (error) {
+    console.error('Gagal mengunduh dokumen PDF:', error)
+    alert('Gagal mengunduh dokumen PDF. Silakan coba lagi.')
+  } finally {
+    isDownloading.value = false
+  }
 }
 
+// 🟢 CETAK LANGSUNG (PRINT BROWSER)
 function handlePrint() {
   window.print()
 }
 
+// 🟢 KIRIM EMAIL
 async function handleEmail() {
   try {
     isSendingEmail.value = true
-    // Simulasi atau panggil API pengiriman email
     await new Promise((resolve) => setTimeout(resolve, 1000))
     alert(`Formulir e-TO ${props.detail.toCode} berhasil dikirimkan ke email personel.`)
   } catch (error) {
@@ -48,7 +60,6 @@ async function handleEmail() {
       <div class="flex items-center justify-between">
         <h3 class="font-bold text-textPrimary text-xs font-headline">Status Dokumen</h3>
 
-        <!-- Status Label Dinamis -->
         <span
           v-if="detail.status === 'APPROVED'"
           class="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-bold text-[10px] border border-emerald-100 flex items-center gap-1"
@@ -104,10 +115,16 @@ async function handleEmail() {
         <button
           type="button"
           @click="handleDownload"
-          class="w-full py-2.5 rounded-lg bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
+          :disabled="isDownloading"
+          class="w-full py-2.5 rounded-lg bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer disabled:opacity-50"
         >
-          <span class="material-symbols-outlined text-[18px]">download</span>
-          <span>Unduh Dokumen PDF</span>
+          <span
+            class="material-symbols-outlined text-[18px]"
+            :class="{ 'animate-spin': isDownloading }"
+          >
+            {{ isDownloading ? 'progress_activity' : 'download' }}
+          </span>
+          <span>{{ isDownloading ? 'Mengunduh PDF...' : 'Unduh Dokumen PDF' }}</span>
         </button>
 
         <button
@@ -136,17 +153,17 @@ async function handleEmail() {
       </div>
     </div>
 
-    <!-- Card 2: Jejak Audit & Validasi Dinamis (Sesuai 3 Role Approval) -->
-    <div class="bg-surfaceCard p-5 rounded-xl border border-gray-100 shadow-2xs space-y-3">
+    <!-- Card 2: Jejak Audit -->
+    <div
+      class="bg-surfaceCard p-5 rounded-xl border border-gray-100 shadow-2xs space-y-3 print:hidden"
+    >
       <div class="flex items-center gap-2 pb-2 border-b border-gray-100">
         <span class="material-symbols-outlined text-primary text-[18px]">history</span>
         <h3 class="font-bold text-textPrimary text-xs font-headline">Jejak Audit & Validasi</h3>
       </div>
 
       <div class="space-y-3 text-xs">
-        <!-- Jika log API kosong, tampilkan fallback sesuai urutan role backend -->
         <div v-if="!detail.approvalLogs || detail.approvalLogs.length === 0" class="space-y-3">
-          <!-- Step 3: Admin Travel KP -->
           <div class="flex items-start gap-2 opacity-50">
             <span class="w-2 h-2 rounded-full bg-gray-300 shrink-0 mt-1.5"></span>
             <div>
@@ -158,7 +175,6 @@ async function handleEmail() {
             </div>
           </div>
 
-          <!-- Step 2: Pejabat Penyetuju (Kakanwil) -->
           <div class="flex items-start gap-2">
             <span
               :class="[
@@ -182,7 +198,6 @@ async function handleEmail() {
             </div>
           </div>
 
-          <!-- Step 1: Booker -->
           <div class="flex items-start gap-2">
             <span class="w-2 h-2 rounded-full bg-emerald-600 shrink-0 mt-1.5"></span>
             <div>
@@ -197,7 +212,6 @@ async function handleEmail() {
           </div>
         </div>
 
-        <!-- Render logs jika ada dari API -->
         <div v-else v-for="log in detail.approvalLogs" :key="log.id" class="flex items-start gap-2">
           <span class="w-2 h-2 rounded-full bg-emerald-600 shrink-0 mt-1.5"></span>
           <div>
@@ -215,7 +229,7 @@ async function handleEmail() {
 
     <!-- Card 3: Integritas Dokumen -->
     <div
-      class="p-4 rounded-xl bg-emerald-50/70 border border-emerald-100 flex items-start gap-2.5 text-xs text-emerald-900"
+      class="p-4 rounded-xl bg-emerald-50/70 border border-emerald-100 flex items-start gap-2.5 text-xs text-emerald-900 print:hidden"
     >
       <span class="material-symbols-outlined text-emerald-700 text-[20px] shrink-0 mt-0.5"
         >verified_user</span
