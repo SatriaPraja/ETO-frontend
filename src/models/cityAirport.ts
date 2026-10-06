@@ -20,7 +20,7 @@ export interface CityItem {
 // Model Item Bandara (IATA)
 export interface AirportItem {
   id: number
-  code: string // Kode IATA (e.g. CGK, SUB)
+  code: string 
   name: string
   cityId: number
   cityName?: string

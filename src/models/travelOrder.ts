@@ -63,7 +63,7 @@ export interface TravellerItemPayload {
   originCityId?: number | null
   destinationCityId?: number | null
   departureDate: string
-  departureTime: string // Format: "08:30"
+  departureTime: string 
   departureInfo?: string | null
   maskapai?: string | null
   kelas?: string | null
@@ -71,7 +71,7 @@ export interface TravellerItemPayload {
   transportClassId?: number | null
   isRoundTrip: boolean
   returnDate?: string | null
-  returnTime?: string | null // Format: "17:45"
+  returnTime?: string | null 
   returnInfo?: string | null
   returnMaskapai?: string | null
   returnKelas?: string | null

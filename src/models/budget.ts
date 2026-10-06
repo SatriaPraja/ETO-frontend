@@ -11,10 +11,10 @@ export interface BudgetQueryParams {
 export interface BudgetItem {
   id: string
   officeName: string
-  accountNumber: string // COA e.g. 5.2.1.04.01
-  accountName: string // Uraian Anggaran
-  programName: string // Program Kerja Resmi
-  activityName: string // Kegiatan Operasional
+  accountNumber: string 
+  accountName: string 
+  programName: string 
+  activityName: string 
   paguBudget: number
   usedBudget: number
   remainingBudget?: number

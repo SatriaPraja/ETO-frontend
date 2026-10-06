@@ -11,7 +11,7 @@ export interface DashboardQueryParams {
     | 'CANCELLED'
   limit?: number
   page?: number
-  monthYear?: string // Format YYYY-MM
+  monthYear?: string 
 }
 
 // 1. KPI Counter Cards (Top Bar)

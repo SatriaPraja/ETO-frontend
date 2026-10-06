@@ -160,7 +160,6 @@ const router = createRouter({
           meta: { roles: ['SUPER_ADMIN', 'ADMIN_TRAVEL_KP'] },
         },
 
-        // User Management (Hanya Super Admin)
         {
           path: 'users',
           name: 'users',

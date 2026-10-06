@@ -7,7 +7,7 @@ export interface ReportHotelQueryParams {
   cityId?: number | null
   searchCategory?: 'hotelName' | 'guestName' | 'toCode'
   keyword?: string
-  period?: string // Format: YYYY-MM (e.g. "2026-05")
+  period?: string 
   status?: 'WAITING_PEJABAT' | 'APPROVED' | 'REJECTED' | 'RETURNED' | 'CANCELLED'
   page?: number
   limit?: number
@@ -61,8 +61,8 @@ export interface ReportTransportQueryParams {
   budgetId?: string
   searchCategory?: 'guestName' | 'npk' | 'toCode'
   keyword?: string
-  startDate?: string // YYYY-MM-DD
-  endDate?: string // YYYY-MM-DD
+  startDate?: string 
+  endDate?: string 
   status?: 'WAITING_PEJABAT' | 'APPROVED' | 'REJECTED' | 'RETURNED' | 'CANCELLED'
   category?: 'INTERNAL' | 'EKSTERNAL'
   transportType?: 'flight' | 'train' | 'sea' | 'bus' | 'car'
