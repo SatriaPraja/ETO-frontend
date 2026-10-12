@@ -26,7 +26,9 @@ export const cityAirportService = {
   // ====================================================================
 
   async getCities(params: CityAirportQueryParams): Promise<PaginatedResponse<CityItem>> {
-    const res = await api.get<ApiResponse<PaginatedResponse<CityItem>>>('/v1/master/cities', { params })
+    const res = await api.get<ApiResponse<PaginatedResponse<CityItem>>>('/v1/master/cities', {
+      params,
+    })
     return res.data.data
   },
 
@@ -55,7 +57,9 @@ export const cityAirportService = {
   // ====================================================================
 
   async getAirports(params: CityAirportQueryParams): Promise<PaginatedResponse<AirportItem>> {
-    const res = await api.get<ApiResponse<PaginatedResponse<AirportItem>>>('/v1/master/airports', { params })
+    const res = await api.get<ApiResponse<PaginatedResponse<AirportItem>>>('/v1/master/airports', {
+      params,
+    })
     return res.data.data
   },
 
@@ -77,5 +81,28 @@ export const cityAirportService = {
   async deleteAirport(id: number): Promise<boolean> {
     const res = await api.delete<ApiResponse<null>>(`/v1/master/airports/${id}`)
     return res.data.success
+  },
+  async downloadExportExcel(
+    type: 'cities' | 'airports' | 'all' = 'all',
+    params?: any,
+  ): Promise<void> {
+    const response = await api.get('/v1/master/cities-airports/export', {
+      params: { ...params, type },
+      responseType: 'blob',
+    })
+
+    const blob = new Blob([response.data], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    })
+    const url = window.URL.createObjectURL(blob)
+
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `Master_Kota_Bandara_${type.toUpperCase()}_${new Date().toISOString().split('T')[0]}.xlsx`
+    document.body.appendChild(link)
+    link.click()
+
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
   },
 }

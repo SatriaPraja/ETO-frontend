@@ -20,7 +20,9 @@ export const vendorService = {
    * Mengambil detail vendor berdasarkan ID
    */
   async getVendorById(id: number): Promise<VendorItem> {
-    const response = await api.get<{ success: boolean; data: VendorItem }>(`/v1/master/vendors/${id}`)
+    const response = await api.get<{ success: boolean; data: VendorItem }>(
+      `/v1/master/vendors/${id}`,
+    )
     return response.data.data
   },
 
@@ -28,7 +30,10 @@ export const vendorService = {
    * Menambahkan vendor / maskapai baru
    */
   async createVendor(payload: CreateVendorPayload): Promise<VendorItem> {
-    const response = await api.post<{ success: boolean; data: VendorItem }>('/v1/master/vendors', payload)
+    const response = await api.post<{ success: boolean; data: VendorItem }>(
+      '/v1/master/vendors',
+      payload,
+    )
     return response.data.data
   },
 
@@ -36,7 +41,10 @@ export const vendorService = {
    * Memperbarui data vendor / maskapai
    */
   async updateVendor(id: number, payload: UpdateVendorPayload): Promise<VendorItem> {
-    const response = await api.put<{ success: boolean; data: VendorItem }>(`/v1/master/vendors/${id}`, payload)
+    const response = await api.put<{ success: boolean; data: VendorItem }>(
+      `/v1/master/vendors/${id}`,
+      payload,
+    )
     return response.data.data
   },
 
@@ -46,5 +54,39 @@ export const vendorService = {
   async deleteVendor(id: number): Promise<boolean> {
     const response = await api.delete<{ success: boolean }>(`/v1/master/vendors/${id}`)
     return response.data.success
+  },
+
+  async downloadExportExcel(params?: VendorQueryParams): Promise<void> {
+    try {
+      const response = await api.get('/v1/master/vendors/export', {
+        params,
+        responseType: 'blob',
+      })
+
+      const blob = new Blob([response.data], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      })
+      const url = window.URL.createObjectURL(blob)
+
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `Master_Rekanan_Transportasi_${new Date().toISOString().split('T')[0]}.xlsx`
+      document.body.appendChild(link)
+      link.click()
+
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+    } catch (error: any) {
+      if (error.response && error.response.data instanceof Blob) {
+        const text = await error.response.data.text()
+        try {
+          const json = JSON.parse(text)
+          throw new Error(json.message || 'Gagal mengunduh file Excel.')
+        } catch {
+          throw new Error('Gagal mengunduh file dari server.')
+        }
+      }
+      throw error
+    }
   },
 }

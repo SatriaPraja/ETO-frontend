@@ -1,9 +1,26 @@
 <script setup lang="ts">
-const emit = defineEmits(['open-modal'])
+import { ref } from 'vue'
 import AppBreadcrumb from '@/components/layout/appBreadcrumb.vue'
+import { budgetService } from '@/services/budgetService'
+import type { BudgetQueryParams } from '@/models/budget'
 
-function handleDownloadRekap() {
-  alert('Mengunduh Rekap Mata Anggaran & Alokasi Pagu (.xlsx)...')
+const props = defineProps<{
+  filters?: Partial<BudgetQueryParams>
+}>()
+
+const emit = defineEmits(['open-modal'])
+const isDownloading = ref(false)
+
+async function handleDownloadRekap() {
+  try {
+    isDownloading.value = true
+    await budgetService.downloadRekapExcel(props.filters)
+  } catch (error: any) {
+    console.error('Gagal mengunduh Rekap MAK:', error)
+    alert('Gagal mengunduh Rekap MAK. Silakan coba beberapa saat lagi.')
+  } finally {
+    isDownloading.value = false
+  }
 }
 </script>
 
@@ -11,13 +28,12 @@ function handleDownloadRekap() {
   <div class="space-y-4 font-body">
     <!-- Breadcrumb -->
     <div class="flex items-center gap-1.5 text-xs text-textMuted flex-wrap">
-     <AppBreadcrumb />
+      <AppBreadcrumb />
     </div>
 
     <!-- Title & Action Buttons -->
     <div class="flex flex-col md:flex-row md:items-start justify-between gap-4">
       <div class="space-y-1.5">
-        <!-- Wrap Flex & Items Center/Start agar badge sejajar rapi dan tidak terpotong -->
         <div class="flex items-start sm:items-center gap-2.5 flex-wrap">
           <h1 class="text-xl lg:text-2xl font-bold text-textPrimary font-headline leading-tight">
             Pengelolaan Mata Anggaran & Alokasi Pagu (COA)
@@ -36,15 +52,21 @@ function handleDownloadRekap() {
         </p>
       </div>
 
-      <!-- Action Buttons (Responsive Grid/Flex untuk Mobile) -->
+      <!-- Action Buttons -->
       <div class="flex items-center gap-2 shrink-0 w-full sm:w-auto">
         <button
           type="button"
           @click="handleDownloadRekap"
-          class="flex-1 sm:flex-none justify-center px-3.5 py-2.5 sm:py-2 rounded-xl sm:rounded-lg bg-surfaceCard border border-gray-200 hover:bg-surfaceCanvas text-textPrimary text-xs font-bold transition-colors inline-flex items-center gap-1.5 shadow-2xs cursor-pointer whitespace-nowrap active:scale-[0.98]"
+          :disabled="isDownloading"
+          class="flex-1 sm:flex-none justify-center px-3.5 py-2.5 sm:py-2 rounded-xl sm:rounded-lg bg-surfaceCard border border-gray-200 hover:bg-surfaceCanvas text-textPrimary text-xs font-bold transition-colors inline-flex items-center gap-1.5 shadow-2xs cursor-pointer whitespace-nowrap active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <span class="material-symbols-outlined text-[18px] sm:text-[16px]">download</span>
-          <span>Unduh Rekap MAK</span>
+          <span
+            class="material-symbols-outlined text-[18px] sm:text-[16px]"
+            :class="{ 'animate-spin': isDownloading }"
+          >
+            {{ isDownloading ? 'progress_activity' : 'download' }}
+          </span>
+          <span>{{ isDownloading ? 'Mengunduh...' : 'Unduh Rekap MAK' }}</span>
         </button>
 
         <button
